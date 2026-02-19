@@ -30,33 +30,20 @@ CriticDeck is a Decky Loader plugin that patches Steam library routes and overla
 4. **User action**
    - Tapping the badge opens the Metacritic review page.
 
+## Installation
+
+1. Download the latest ZIP release from the repository releases page.
+2. Transfer the ZIP file to your Steam Deck.
+3. Open Decky settings on Steam Deck.
+4. Go to Developer.
+5. Select Install Plugin from ZIP file.
+
 ## Usage
 
 1. Open a game page in Steam Deck Gaming Mode.
 2. Open Decky and ensure CriticDeck is enabled.
 3. Return to the game page to see the CriticDeck badge.
 4. Tap the badge to open the full Metacritic critic page.
-
-## Development
-
-Requirements:
-
-- Node.js 18+
-- `pnpm` 9
-- Decky Loader 3.0+
-
-Install and build:
-
-```bash
-pnpm install
-pnpm run build
-```
-
-Watch mode:
-
-```bash
-pnpm run watch
-```
 
 ## Packaging
 
