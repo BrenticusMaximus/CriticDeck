@@ -1,0 +1,11 @@
+{
+  "name": "CriticDeck",
+  "author": "",
+  "flags": [],
+  "api_version": 2,
+  "publish": {
+    "tags": ["metacritic", "scores"],
+    "description": "Display Metacritic critic scores directly on your library pages.",
+    "image": ""
+  }
+}

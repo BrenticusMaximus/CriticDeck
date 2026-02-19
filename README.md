@@ -1,0 +1,74 @@
+# CriticDeck Documentation
+
+## February 19, 2026 Update
+
+CriticDeck brings **Metacritic critic scores directly into Steam Deck library pages** so you can evaluate games at a glance without leaving Gaming Mode.
+
+![CriticDeck preview](https://images.steamusercontent.com/ugc/12628921612687895720/62D2DA8FF0F13E28B5B3A24B200BE3236D316D35/?imw=5000&imh=5000&ima=fit&impolicy=Letterbox&imcolor=%23000000&letterbox=false)
+
+<a href='https://ko-fi.com/U6U516PSAI' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi5.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
+
+## Overview
+
+CriticDeck is a Decky Loader plugin that patches Steam library routes and overlays each game page with a Metacritic critic score badge. The plugin fetches score data through Metacritic backend endpoints and links directly to each game's review page for full critic breakdown details.
+
+## Highlights
+
+- Injects a Metacritic score badge into Steam Deck library app/detail pages.
+- Opens the game's Metacritic page directly from the badge.
+- Uses a backend proxy flow to fetch score data without requiring manual API setup.
+- Built specifically for Decky Loader + Gaming Mode UX.
+
+## How It Works
+
+1. **Route patching**
+   - Frontend patches library app/detail routes and mounts the CriticDeck badge component.
+2. **Score lookup**
+   - Plugin backend requests Metacritic data endpoints for the focused app title.
+3. **Result mapping**
+   - Frontend maps response payloads into a score value + URL target.
+4. **User action**
+   - Tapping the badge opens the Metacritic review page.
+
+## Usage
+
+1. Open a game page in Steam Deck Gaming Mode.
+2. Open Decky and ensure CriticDeck is enabled.
+3. Return to the game page to see the CriticDeck badge.
+4. Tap the badge to open the full Metacritic critic page.
+
+## Development
+
+Requirements:
+
+- Node.js 18+
+- `pnpm` 9
+- Decky Loader 3.0+
+
+Install and build:
+
+```bash
+pnpm install
+pnpm run build
+```
+
+Watch mode:
+
+```bash
+pnpm run watch
+```
+
+## Packaging
+
+When publishing, include:
+
+```text
+CriticDeck/
+├─ dist/
+├─ package.json
+├─ plugin.json
+├─ main.py
+└─ README.md
+```
+
+<a href='https://ko-fi.com/U6U516PSAI' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi5.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>

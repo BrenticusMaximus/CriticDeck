@@ -1,0 +1,5 @@
+node_modules/
+.rollup.cache/
+*.zip
+dist/
+.DS_Store
