@@ -43,17 +43,4 @@ CriticDeck is a Decky Loader plugin that patches Steam library routes and overla
 3. Return to the game page to see the CriticDeck badge.
 4. Tap the badge to open the full Metacritic critic page.
 
-## Packaging
-
-When publishing, include:
-
-```text
-CriticDeck/
-├─ dist/
-├─ package.json
-├─ plugin.json
-├─ main.py
-└─ README.md
-```
-
 <a href='https://ko-fi.com/U6U516PSAI' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi5.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
