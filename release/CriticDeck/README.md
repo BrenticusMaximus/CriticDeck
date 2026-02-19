@@ -1,7 +1,5 @@
 # CriticDeck Documentation
 
-## February 19, 2026 Update
-
 CriticDeck brings **Metacritic critic scores directly into Steam Deck library pages** so you can evaluate games at a glance without leaving Gaming Mode.
 
 ![CriticDeck preview](https://images.steamusercontent.com/ugc/12628921612687895720/62D2DA8FF0F13E28B5B3A24B200BE3236D316D35/?imw=5000&imh=5000&ima=fit&impolicy=Letterbox&imcolor=%23000000&letterbox=false)
