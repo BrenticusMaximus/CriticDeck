@@ -2,6 +2,10 @@
 
 CriticDeck brings **Metacritic critic scores directly into Steam Deck library pages** so you can evaluate games at a glance without leaving Gaming Mode.
 
+**Latest update (v1.0.1):** Fixed incorrect title matching and switched score detail retrieval to stable Metacritic stats endpoints for more accurate meta and user scores.
+
+**Latest update (v1.0.1):** Fixed incorrect score matching and switched user/critic detail fetching to stable Metacritic stats endpoints for more accurate scores.
+
 ![CriticDeck preview](https://images.steamusercontent.com/ugc/12628921612687895720/62D2DA8FF0F13E28B5B3A24B200BE3236D316D35/?imw=5000&imh=5000&ima=fit&impolicy=Letterbox&imcolor=%23000000&letterbox=false)
 
 <a href='https://ko-fi.com/U6U516PSAI' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi5.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
