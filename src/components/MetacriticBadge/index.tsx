@@ -176,7 +176,6 @@ export const MetacriticBadge = () => {
             <strong>{metascoreDisplay}</strong>
             <span className="criticdeck-score-label">
               <span>META</span>
-              <span>SCORE</span>
             </span>
           </div>
         )}
@@ -188,7 +187,7 @@ export const MetacriticBadge = () => {
               data-compact={showBothScores}
             >
               <strong>{userScoreValue.toFixed(1)}</strong>
-              <span>User Score</span>
+              <span>User</span>
             </div>
           </>
         )}
