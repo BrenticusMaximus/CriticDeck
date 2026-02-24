@@ -48,6 +48,7 @@ type ScoreItem = {
   title?: string
   slug?: string
   description?: string
+  mustPlay?: boolean
   platform?: string
   releaseDate?: string
   criticScoreSummary?: CriticSummary
@@ -68,6 +69,21 @@ type CriticSummary = {
   sentiment?: string
 }
 
+type StatsResponse = {
+  data?: {
+    item?: {
+      max?: number
+      score?: number
+      reviewCount?: number
+      positiveCount?: number
+      neutralCount?: number
+      negativeCount?: number
+      sentiment?: string
+      url?: string
+    }
+  }
+}
+
 const SEARCH_ENDPOINT = (
   query: string
 ) =>
@@ -76,11 +92,19 @@ const SCORES_ENDPOINT = (
   slug: string
 ) =>
   `https://backend.metacritic.com/games/metacritic/${slug}/web?componentName=scores&componentDisplayName=Scores&componentType=ScoreSummary`
+const USER_STATS_ENDPOINT = (
+  slug: string
+) =>
+  `https://backend.metacritic.com/reviews/metacritic/user/games/${slug}/stats/web?componentName=user-score-summary&componentDisplayName=User+Score+Summary&componentType=MetaScoreSummary`
+const CRITIC_STATS_ENDPOINT = (
+  slug: string
+) =>
+  `https://backend.metacritic.com/reviews/metacritic/critic/games/${slug}/stats/web?componentName=critic-score-summary&componentDisplayName=Critic+Score+Summary&componentType=MetaScoreSummary`
 
 const USER_AGENT =
   'CriticDeck/0.1 (+https://github.com/chrismichaelps/metacritic)'
 
-const CACHE_KEY = 'criticdeck.cache'
+const CACHE_KEY = 'criticdeck.cache.v2'
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000
 
 const normalize = (value?: string | null) =>
@@ -113,7 +137,7 @@ const pickBestMatch = (
   const normalizedTarget = normalize(title)
   const normalizedPlatform = normalize(platformHint)
 
-  let bestScore = 0
+  let bestScore = Number.NEGATIVE_INFINITY
   let bestMatch: SearchItem | undefined
   for (const item of items) {
     if (item.type !== 'game-title') {
@@ -122,27 +146,39 @@ const pickBestMatch = (
     const normalizedTitle = normalize(item.title)
     if (!normalizedTitle.length) continue
 
+    const targetTokens = normalizedTarget.split(' ').filter(Boolean)
+    const titleTokens = normalizedTitle.split(' ').filter(Boolean)
+    const titleTokenSet = new Set(titleTokens)
+    const overlapCount = targetTokens.reduce(
+      (count, token) => count + (titleTokenSet.has(token) ? 1 : 0),
+      0
+    )
+
     let similarity = 0
-    const minLen = Math.min(normalizedTarget.length, normalizedTitle.length)
-    for (let i = 0; i < minLen; i++) {
-      if (normalizedTarget[i] === normalizedTitle[i]) {
-        similarity += 1
-      } else {
-        break
-      }
+    if (normalizedTitle === normalizedTarget) {
+      similarity += 1000
     }
-    if (normalizedTitle.includes(normalizedTarget)) {
-      similarity += normalizedTarget.length
+    if (normalizedTitle.startsWith(normalizedTarget)) {
+      similarity += 120
+    } else if (normalizedTitle.includes(normalizedTarget)) {
+      similarity += 40
     }
+    similarity += overlapCount * 8
+    similarity -= Math.abs(normalizedTitle.length - normalizedTarget.length) * 0.3
+    if (overlapCount && targetTokens.length) {
+      similarity += (overlapCount / targetTokens.length) * 10
+    }
+
     if (
       normalizedPlatform &&
       item.platforms?.some((p) => normalize(p.name) === normalizedPlatform)
     ) {
-      similarity += 5
+      similarity += 12
     }
     if (item.criticScoreSummary?.score) {
       similarity += 1
     }
+
     if (similarity > bestScore) {
       bestScore = similarity
       bestMatch = item
@@ -209,8 +245,8 @@ const queryMetacritic = async (
         ? detail.platform
         : undefined
     const [userScore, criticExtras] = await Promise.all([
-      fetchUserScore(criticSummary?.url),
-      fetchCriticExtras(criticSummary?.url)
+      fetchUserScore(match.slug),
+      fetchCriticExtras(match.slug)
     ])
 
     const criticReviewsPath =
@@ -241,7 +277,7 @@ const queryMetacritic = async (
       user_review_breakdown: userScore?.breakdown,
       critic_review_count: criticExtras?.reviewCount,
       critic_review_breakdown: criticExtras?.breakdown,
-      must_play: criticExtras?.mustPlay
+      must_play: detail.mustPlay ?? criticExtras?.mustPlay
     }
   } catch (err) {
     return {
@@ -329,7 +365,7 @@ export const useMetacriticScore = (title?: string | null) => {
 }
 
 const fetchUserScore = async (
-  criticUrl?: string | null
+  slug?: string | null
 ): Promise<
   | {
       score: number
@@ -339,40 +375,24 @@ const fetchUserScore = async (
     }
   | undefined
 > => {
-  if (!criticUrl) return undefined
-  const userPath = criticUrl.replace('critic-reviews', 'user-reviews')
-  const targetUrl = deriveMainPageUrl(userPath)
-  if (!targetUrl) return undefined
-
+  if (!slug) return undefined
   try {
-    const response = await fetchNoCors(targetUrl, {
-      method: 'GET',
-      headers: {
-        Accept: 'text/html',
-        'User-Agent': USER_AGENT
-      }
-    })
-    if (!response.ok) return undefined
-    const html = await response.text()
-    const scoreMatch = html.match(/User score ([0-9.]+) out of 10/i)
-    if (!scoreMatch) return undefined
-    const scoreValue = parseFloat(scoreMatch[1])
-    if (!scoreValue || Number.isNaN(scoreValue)) {
-      return undefined
-    }
-    const sentimentMatch = html.match(
-      /data-testid="user-score-info"[\s\S]*?scoreSentiment[^>]*>([^<]+)</i
-    )
-    const reviewsMatch = html.match(
-      /data-testid="user-score-info"[\s\S]*?Based on ([^<]+)</i
-    )
-    const breakdown = extractBreakdown(html)
+    const payload: StatsResponse = await requestJson(USER_STATS_ENDPOINT(slug))
+    const summary = payload?.data?.item
+    if (typeof summary?.score !== 'number') return undefined
 
     return {
-      score: scoreValue,
-      sentiment: sentimentMatch?.[1]?.trim(),
-      reviewCount: reviewsMatch ? `Based on ${reviewsMatch[1].trim()}` : undefined,
-      breakdown
+      score: summary.score,
+      sentiment: summary.sentiment,
+      reviewCount:
+        typeof summary.reviewCount === 'number'
+          ? `Based on ${summary.reviewCount.toLocaleString()} Ratings`
+          : undefined,
+      breakdown: {
+        positive: summary.positiveCount,
+        mixed: summary.neutralCount,
+        negative: summary.negativeCount
+      }
     }
   } catch (_error) {
     return undefined
@@ -380,7 +400,7 @@ const fetchUserScore = async (
 }
 
 const fetchCriticExtras = async (
-  criticUrl?: string | null
+  slug?: string | null
 ): Promise<
   | {
       reviewCount?: string
@@ -389,45 +409,25 @@ const fetchCriticExtras = async (
     }
   | undefined
 > => {
-  if (!criticUrl) return undefined
-  const targetUrl = deriveMainPageUrl(criticUrl)
-  if (!targetUrl) return undefined
+  if (!slug) return undefined
   try {
-    const response = await fetchNoCors(targetUrl, {
-      method: 'GET',
-      headers: {
-        Accept: 'text/html',
-        'User-Agent': USER_AGENT
-      }
-    })
-    if (!response.ok) return undefined
-    const html = await response.text()
-    const reviewMatch = html.match(/Based on\s+([\d,]+)\s+Critic Reviews/i)
-    const breakdown = extractBreakdown(html)
-    const mustPlay = /Must-Play/i.test(html)
+    const payload: StatsResponse = await requestJson(CRITIC_STATS_ENDPOINT(slug))
+    const summary = payload?.data?.item
+    if (!summary) return undefined
+
     return {
-      reviewCount: reviewMatch ? `Based on ${reviewMatch[1]} Critic Reviews` : undefined,
-      breakdown,
-      mustPlay
+      reviewCount:
+        typeof summary.reviewCount === 'number'
+          ? `Based on ${summary.reviewCount.toLocaleString()} Critic Reviews`
+          : undefined,
+      breakdown: {
+        positive: summary.positiveCount,
+        mixed: summary.neutralCount,
+        negative: summary.negativeCount
+      },
+      mustPlay: undefined
     }
   } catch (_error) {
     return undefined
-  }
-}
-
-const deriveMainPageUrl = (criticUrl: string) => {
-  const withoutTrailing = criticUrl.replace(/(critic-reviews|user-reviews).*$/, '')
-  return toAbsoluteUrl(withoutTrailing.endsWith('/') ? withoutTrailing : `${withoutTrailing}/`)
-}
-
-const extractBreakdown = (html: string): ReviewBreakdown | undefined => {
-  const positiveMatch = html.match(/Positive[^0-9]{0,8}(\d{1,5})/i)
-  const mixedMatch = html.match(/Mixed[^0-9]{0,8}(\d{1,5})/i)
-  const negativeMatch = html.match(/Negative[^0-9]{0,8}(\d{1,5})/i)
-  if (!positiveMatch && !mixedMatch && !negativeMatch) return undefined
-  return {
-    positive: positiveMatch ? parseInt(positiveMatch[1], 10) : undefined,
-    mixed: mixedMatch ? parseInt(mixedMatch[1], 10) : undefined,
-    negative: negativeMatch ? parseInt(negativeMatch[1], 10) : undefined
   }
 }
