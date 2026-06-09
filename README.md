@@ -2,6 +2,8 @@
 
 CriticDeck brings **Metacritic critic scores directly into Steam Deck library pages** so you can evaluate games at a glance without leaving Gaming Mode.
 
+<a href="https://discord.gg/Smh4K5Ad">For support, suggestions, etc. please visit my Discord</a>.
+
 **Latest update (v1.0.1):** Fixed incorrect title matching and switched score detail retrieval to stable Metacritic stats endpoints for more accurate meta and user scores.
 
 ![CriticDeck preview](https://images.steamusercontent.com/ugc/11829666759259447490/8A89CBB1DDBE6C73BF2AEB44E3825758299D6E04/?imw=5000&imh=5000&ima=fit&impolicy=Letterbox&imcolor=%23000000&letterbox=false)
