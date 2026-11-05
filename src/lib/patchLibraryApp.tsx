@@ -8,6 +8,7 @@ import { routerHook } from '@decky/api'
 import React, { ReactElement } from 'react'
 
 import { MetacriticBadge } from '../components/MetacriticBadge'
+import { GameOverview } from '../hooks/useGameOverview'
 
 export function patchLibraryApp() {
   return routerHook.addPatch('/library/app/:appid', (tree: any) => {
@@ -21,7 +22,9 @@ export function patchLibraryApp() {
         (root: any) =>
           findInReactTree(root, (node: any) => node?.props?.children?.props?.overview)?.props?.children
       ],
-      (_nodes: Array<Record<string, unknown>>, ret?: ReactElement) => {
+      (nodes: Array<Record<string, unknown>>, ret?: ReactElement) => {
+        const overview = (nodes?.[0] as { overview?: GameOverview } | undefined)?.overview
+
         const container = findInReactTree(
           ret,
           (element: ReactElement) =>
@@ -40,7 +43,7 @@ export function patchLibraryApp() {
           container.props.children.splice(
             1,
             0,
-            <MetacriticBadge key="criticdeck" />
+            <MetacriticBadge key="criticdeck" overview={overview} />
           )
         }
 

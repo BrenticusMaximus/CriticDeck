@@ -2,7 +2,7 @@ import { Navigation } from '@decky/ui'
 import React, { useMemo } from 'react'
 import { FaExternalLinkAlt } from 'react-icons/fa'
 
-import { useGameOverview } from '../../hooks/useGameOverview'
+import { GameOverview } from '../../hooks/useGameOverview'
 import { useMetacriticScore } from '../../hooks/useMetacriticScore'
 import { useSettings, DateFormat } from '../../hooks/useSettings'
 import { criticDeckStyle } from './style'
@@ -78,8 +78,7 @@ const formatReleaseDate = (value?: string | null, format?: DateFormat) => {
   }
 }
 
-export const MetacriticBadge = () => {
-  const overview = useGameOverview()
+export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
   const title = overview?.display_name
   const { data, loading, error } = useMetacriticScore(title)
   const { settings } = useSettings()
