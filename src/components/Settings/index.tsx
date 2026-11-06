@@ -1,6 +1,14 @@
-import { DropdownItem, Navigation, PanelSection, PanelSectionRow, SliderField } from '@decky/ui'
-import React from 'react'
+import {
+  ButtonItem,
+  DropdownItem,
+  Navigation,
+  PanelSection,
+  PanelSectionRow,
+  SliderField
+} from '@decky/ui'
+import React, { useState } from 'react'
 
+import { clearMetacriticCache } from '../../hooks/useMetacriticScore'
 import { LANGUAGE_OPTIONS, useTranslation, TranslationKey } from '../../i18n'
 import {
   DATE_FORMAT_OPTIONS,
@@ -45,6 +53,7 @@ const settingRowStyle: React.CSSProperties = { paddingTop: 10 }
 const SettingsPanel = () => {
   const { settings, setSetting } = useSettings()
   const { t } = useTranslation()
+  const [cacheCleared, setCacheCleared] = useState(false)
 
   return (
     <PanelSection title="CriticDeck">
@@ -151,6 +160,19 @@ const SettingsPanel = () => {
             valueSuffix=" days"
             onChange={(cacheDays) => setSetting({ cacheDays })}
           />
+        </div>
+      </PanelSectionRow>
+      <PanelSectionRow>
+        <div style={settingRowStyle}>
+          <ButtonItem
+            layout="below"
+            onClick={() => {
+              clearMetacriticCache()
+              setCacheCleared(true)
+            }}
+          >
+            {t(cacheCleared ? 'settings.clearCacheDone' : 'settings.clearCache')}
+          </ButtonItem>
         </div>
       </PanelSectionRow>
       <PanelSectionRow>

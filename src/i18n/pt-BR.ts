@@ -20,6 +20,8 @@ export const ptBR: Record<keyof typeof en, string> = {
   'settings.cacheDuration': 'Duração do cache',
   'settings.cacheDurationDesc':
     'Por quanto tempo uma nota obtida com sucesso fica em cache antes de ser atualizada novamente.',
+  'settings.clearCache': 'Limpar notas em cache',
+  'settings.clearCacheDone': 'Cache limpo',
 
   // Settings - language
   'settings.language': 'Idioma',

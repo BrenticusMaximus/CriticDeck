@@ -18,6 +18,8 @@ export const en = {
   'settings.cacheDuration': 'Cache duration',
   'settings.cacheDurationDesc':
     'How long a successfully fetched score stays cached before being refreshed.',
+  'settings.clearCache': 'Clear cached scores',
+  'settings.clearCacheDone': 'Cache cleared',
 
   // Settings - language
   'settings.language': 'Language',
