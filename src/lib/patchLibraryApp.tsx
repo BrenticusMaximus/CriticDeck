@@ -10,10 +10,26 @@ import React, { ReactElement } from 'react'
 import { MetacriticBadge } from '../components/MetacriticBadge'
 import { GameOverview } from '../hooks/useGameOverview'
 
-// @decky/ui doesn't export EAppType publicly; bit value confirmed live against
-// real Steam games (app_type: 1) vs. non-Steam shortcuts (app_type: 1073741824)
-// and tools/dedicated servers (app_type: 4).
+// @decky/ui doesn't export EAppType publicly; bit values confirmed live against
+// real Steam games (app_type: 1) vs. tools/dedicated servers (app_type: 4) and
+// non-Steam shortcuts (app_type: 1073741824).
 const APP_TYPE_GAME_BIT = 1
+// A non-Steam shortcut (emulated ROM, Epic/GOG game added manually, etc.) only
+// ever carries the Shortcut bit - it's still a real game, so Shortcut must NOT
+// be treated as a non-game signal on its own. Only these bits mean "not a game".
+const APP_TYPE_NON_GAME_BITS =
+  2 /* Application */ |
+  4 /* Tool */ |
+  8 /* Demo */ |
+  16 /* Deprecated */ |
+  32 /* DLC */ |
+  64 /* Guide */ |
+  128 /* Driver */ |
+  256 /* Config */ |
+  512 /* Hardware */ |
+  2048 /* Video */ |
+  4096 /* Plugin */ |
+  8192 /* MusicAlbum */
 
 function isActualGame(overview: GameOverview): boolean {
   const appType = overview?.app_type
@@ -21,7 +37,10 @@ function isActualGame(overview: GameOverview): boolean {
   if (!appType) {
     return true
   }
-  return (appType & APP_TYPE_GAME_BIT) !== 0
+  if (appType & APP_TYPE_GAME_BIT) {
+    return true
+  }
+  return (appType & APP_TYPE_NON_GAME_BITS) === 0
 }
 
 export function patchLibraryApp() {
