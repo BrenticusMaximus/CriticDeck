@@ -1,6 +1,7 @@
 import { DropdownItem, Navigation, PanelSection, PanelSectionRow, SliderField } from '@decky/ui'
 import React from 'react'
 
+import { LANGUAGE_OPTIONS, useTranslation, TranslationKey } from '../../i18n'
 import {
   DATE_FORMAT_OPTIONS,
   SCORE_DISPLAY_OPTIONS,
@@ -12,7 +13,7 @@ import buildInfo from '../../build-info.json'
 
 type OptionGroupProps<T extends string> = {
   title: string
-  options: ReadonlyArray<{ value: T; label: string }>
+  options: ReadonlyArray<{ value: T; labelKey: TranslationKey }>
   value: T
   onSelect: (value: T) => void
 }
@@ -24,15 +25,18 @@ const OptionGroup = <T extends string>({
   options,
   value,
   onSelect
-}: OptionGroupProps<T>) => (
-  <DropdownItem
-    label={title}
-    layout="below"
-    rgOptions={options.map((option) => ({ data: option.value, label: option.label }))}
-    selectedOption={value}
-    onChange={(selected) => onSelect(selected.data as T)}
-  />
-)
+}: OptionGroupProps<T>) => {
+  const { t } = useTranslation()
+  return (
+    <DropdownItem
+      label={title}
+      layout="below"
+      rgOptions={options.map((option) => ({ data: option.value, label: t(option.labelKey) }))}
+      selectedOption={value}
+      onChange={(selected) => onSelect(selected.data as T)}
+    />
+  )
+}
 
 // Padding (not margin) reliably reserves space between rows even when a
 // margin alone would collapse against a PanelSectionRow boundary.
@@ -40,16 +44,14 @@ const settingRowStyle: React.CSSProperties = { paddingTop: 10 }
 
 const SettingsPanel = () => {
   const { settings, setSetting } = useSettings()
+  const { t } = useTranslation()
 
   return (
     <PanelSection title="CriticDeck">
-      <PanelSectionRow>
-        CriticDeck fetches scores from Metacritic using the unofficial API
-        documented at github.com/chrismichaelps/metacritic.
-      </PanelSectionRow>
+      <PanelSectionRow>{t('settings.intro')}</PanelSectionRow>
       <PanelSectionRow>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <span style={{ fontWeight: 600 }}>Current build</span>
+          <span style={{ fontWeight: 600 }}>{t('settings.currentBuild')}</span>
           <span>{buildInfo.timestamp}</span>
         </div>
       </PanelSectionRow>
@@ -62,13 +64,13 @@ const SettingsPanel = () => {
             )
           }
         >
-          View API project ↗
+          {t('settings.viewApiProject')}
         </a>
       </PanelSectionRow>
       <PanelSectionRow>
         <div style={settingRowStyle}>
           <OptionGroup
-            title="Release date format"
+            title={t('settings.releaseDateFormat')}
             options={DATE_FORMAT_OPTIONS}
             value={settings.dateFormat}
             onSelect={(dateFormat) => setSetting({ dateFormat })}
@@ -78,7 +80,7 @@ const SettingsPanel = () => {
       <PanelSectionRow>
         <div style={settingRowStyle}>
           <OptionGroup
-            title="Score display"
+            title={t('settings.scoreDisplay')}
             options={SCORE_DISPLAY_OPTIONS}
             value={settings.scoreDisplay}
             onSelect={(scoreDisplay) => setSetting({ scoreDisplay })}
@@ -88,7 +90,7 @@ const SettingsPanel = () => {
       <PanelSectionRow>
         <div style={settingRowStyle}>
           <OptionGroup
-            title="Layout"
+            title={t('settings.layout')}
             options={LAYOUT_OPTIONS}
             value={settings.layoutMode}
             onSelect={(layoutMode) => setSetting({ layoutMode })}
@@ -98,7 +100,7 @@ const SettingsPanel = () => {
       <PanelSectionRow>
         <div style={settingRowStyle}>
           <OptionGroup
-            title="Card position"
+            title={t('settings.cardPosition')}
             options={POSITION_OPTIONS}
             value={settings.position}
             onSelect={(position) => setSetting({ position })}
@@ -108,7 +110,7 @@ const SettingsPanel = () => {
       <PanelSectionRow>
         <div style={settingRowStyle}>
           <SliderField
-            label="Horizontal offset"
+            label={t('settings.horizontalOffset')}
             layout="below"
             value={settings.horizontalOffset}
             min={0}
@@ -123,7 +125,7 @@ const SettingsPanel = () => {
       <PanelSectionRow>
         <div style={settingRowStyle}>
           <SliderField
-            label="Vertical offset"
+            label={t('settings.verticalOffset')}
             layout="below"
             value={settings.verticalOffset}
             min={0}
@@ -138,9 +140,9 @@ const SettingsPanel = () => {
       <PanelSectionRow>
         <div style={settingRowStyle}>
           <SliderField
-            label="Cache duration"
+            label={t('settings.cacheDuration')}
             layout="below"
-            description="How long a successfully fetched score stays cached before being refreshed."
+            description={t('settings.cacheDurationDesc')}
             value={settings.cacheDays}
             min={1}
             max={30}
@@ -148,6 +150,20 @@ const SettingsPanel = () => {
             showValue
             valueSuffix=" days"
             onChange={(cacheDays) => setSetting({ cacheDays })}
+          />
+        </div>
+      </PanelSectionRow>
+      <PanelSectionRow>
+        <div style={settingRowStyle}>
+          <DropdownItem
+            label={t('settings.language')}
+            layout="below"
+            rgOptions={LANGUAGE_OPTIONS.map((option) => ({
+              data: option.value,
+              label: t(option.label)
+            }))}
+            selectedOption={settings.language}
+            onChange={(selected) => setSetting({ language: selected.data })}
           />
         </div>
       </PanelSectionRow>

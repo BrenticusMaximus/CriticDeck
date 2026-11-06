@@ -5,6 +5,7 @@ import { FaExternalLinkAlt } from 'react-icons/fa'
 import { GameOverview } from '../../hooks/useGameOverview'
 import { useMetacriticScore } from '../../hooks/useMetacriticScore'
 import { useSettings, DateFormat } from '../../hooks/useSettings'
+import { useTranslation, translateSentiment } from '../../i18n'
 import { criticDeckStyle } from './style'
 
 const toneForScore = (score?: number | null) => {
@@ -21,25 +22,29 @@ const toneForUserScore = (score?: number | null) => {
   return 'weak'
 }
 
-const monthNames = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December'
-]
+const MONTH_KEYS = [
+  'month.january',
+  'month.february',
+  'month.march',
+  'month.april',
+  'month.may',
+  'month.june',
+  'month.july',
+  'month.august',
+  'month.september',
+  'month.october',
+  'month.november',
+  'month.december'
+] as const
 
 const pad = (value: number, size: number) =>
   value.toString().padStart(size, '0')
 
-const formatReleaseDate = (value?: string | null, format?: DateFormat) => {
+const formatReleaseDate = (
+  value: string | null | undefined,
+  format: DateFormat | undefined,
+  t: ReturnType<typeof useTranslation>['t']
+) => {
   if (!value || !format) return undefined
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) {
@@ -48,7 +53,7 @@ const formatReleaseDate = (value?: string | null, format?: DateFormat) => {
 
   const year = date.getFullYear()
   const monthIndex = date.getMonth()
-  const monthName = monthNames[monthIndex]
+  const monthName = t(MONTH_KEYS[monthIndex])
   const day = date.getDate()
   const mm = pad(monthIndex + 1, 2)
   const dd = pad(day, 2)
@@ -96,7 +101,8 @@ const findHeaderElement = (root: HTMLDivElement | null): Element | null => {
 export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
   const title = overview?.display_name
   const { settings } = useSettings()
-  const { data, loading, error } = useMetacriticScore(title, settings.cacheDays)
+  const { t, language } = useTranslation()
+  const { data, loading, error } = useMetacriticScore(title, settings.cacheDays, t)
   const cardSize = 'card'
   const { position, horizontalOffset, verticalOffset } = settings
   const rootRef = useRef<HTMLDivElement>(null)
@@ -114,10 +120,12 @@ export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
   }, [loading, data, settings.scoreDisplay, settings.position])
 
   const tone = useMemo(() => toneForScore(data?.score), [data?.score])
-  const label = data?.sentiment || (data?.found === false ? 'No score yet' : 'Metascore')
+  const label =
+    translateSentiment(language, data?.sentiment) ||
+    (data?.found === false ? t('badge.noScoreYet') : t('badge.metascoreFallback'))
   const formattedDate = useMemo(
-    () => formatReleaseDate(data?.release_date, settings.dateFormat),
-    [data?.release_date, settings.dateFormat]
+    () => formatReleaseDate(data?.release_date, settings.dateFormat, t),
+    [data?.release_date, settings.dateFormat, t]
   )
   const userScoreValue = data?.user_score
   const userTone = useMemo(
@@ -129,10 +137,10 @@ export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
       return data.score
     }
     if (data?.found) {
-      return 'TBD'
+      return t('badge.tbd')
     }
     return '--'
-  }, [data?.score, data?.found])
+  }, [data?.score, data?.found, t])
 
   if (!title) {
     return <></>
@@ -185,13 +193,16 @@ export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
         }}
         disabled={!data?.metacritic_url}
       >
-        <FaExternalLinkAlt style={{ marginRight: 4 }} /> View Details
+        <FaExternalLinkAlt style={{ marginRight: 4 }} /> {t('badge.viewDetails')}
       </button>
     </div>
   )
 
-  const metascoreSub = `Out of ${data?.score_max ?? 100}`
-  const userScoreSub = data?.user_review_count || 'Out of 10'
+  const metascoreSub = t('badge.outOfMax', { max: data?.score_max ?? 100 })
+  const userScoreSub =
+    typeof data?.user_review_count === 'number'
+      ? t('metacritic.ofRatingsCount', { count: data.user_review_count.toLocaleString() })
+      : t('badge.outOfTen')
 
   const renderCardLayout = () => (
     <div className="criticdeck-card" data-size={cardSize}>
@@ -199,7 +210,7 @@ export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
         {showMetascore && (
           <div className="criticdeck-score-chip" data-tone={tone}>
             <div className="criticdeck-score-chip-text">
-              <span className="criticdeck-score-chip-label">META SCORE</span>
+              <span className="criticdeck-score-chip-label">{t('badge.metaScoreLabel')}</span>
               <span className="criticdeck-score-chip-sub">{metascoreSub}</span>
             </div>
             <strong className="criticdeck-score-chip-value">{metascoreDisplay}</strong>
@@ -208,7 +219,7 @@ export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
         {showUserScore && (
           <div className="criticdeck-score-chip" data-tone={userTone}>
             <div className="criticdeck-score-chip-text">
-              <span className="criticdeck-score-chip-label">USER SCORE</span>
+              <span className="criticdeck-score-chip-label">{t('badge.userScoreLabel')}</span>
               <span className="criticdeck-score-chip-sub">{userScoreSub}</span>
             </div>
             <strong className="criticdeck-score-chip-value">
@@ -220,11 +231,11 @@ export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
       <div className="criticdeck-body">
         <div className="criticdeck-title">{data?.title ?? title}</div>
         <div className="criticdeck-meta">
-          {data?.platform || 'Platform unknown'}
+          {data?.platform || t('badge.platformUnknown')}
           {formattedDate ? ` · ${formattedDate}` : ''}
         </div>
         <div className="criticdeck-status">
-          {loading && 'Updating Metacritic score…'}
+          {loading && t('badge.updatingScore')}
           {!loading && error && `⚠️ ${error}`}
           {!loading && !error && label}
         </div>

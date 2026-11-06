@@ -2,40 +2,42 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 const STORAGE_KEY = 'criticdeck.settings'
 
+import type { LanguagePreference, TranslationKey } from '../i18n'
+
 export const DATE_FORMAT_OPTIONS = [
-  { value: 'MDY', label: 'MDY (Month, day, year)' },
-  { value: 'DMY', label: 'DMY (Day, month, year)' },
-  { value: 'YMD', label: 'YMD (Year, month, day)' },
-  { value: 'JUL', label: 'JUL (yy/ddd)' },
-  { value: 'ISO', label: 'ISO (YYYY-MM-DD)' },
-  { value: 'USA', label: 'USA (MM/DD/YYYY)' },
-  { value: 'EUR', label: 'EUR (DD.MM.YYYY)' },
-  { value: 'JIS', label: 'JIS (YYYY-MM-DD)' }
+  { value: 'MDY', labelKey: 'settings.dateFormat.MDY' as TranslationKey },
+  { value: 'DMY', labelKey: 'settings.dateFormat.DMY' as TranslationKey },
+  { value: 'YMD', labelKey: 'settings.dateFormat.YMD' as TranslationKey },
+  { value: 'JUL', labelKey: 'settings.dateFormat.JUL' as TranslationKey },
+  { value: 'ISO', labelKey: 'settings.dateFormat.ISO' as TranslationKey },
+  { value: 'USA', labelKey: 'settings.dateFormat.USA' as TranslationKey },
+  { value: 'EUR', labelKey: 'settings.dateFormat.EUR' as TranslationKey },
+  { value: 'JIS', labelKey: 'settings.dateFormat.JIS' as TranslationKey }
 ] as const
 
 export type DateFormat = (typeof DATE_FORMAT_OPTIONS)[number]['value']
 
 export const SCORE_DISPLAY_OPTIONS = [
-  { value: 'metascore', label: 'Metascore only' },
-  { value: 'userscore', label: 'User score only' },
-  { value: 'both', label: 'Both scores' }
+  { value: 'metascore', labelKey: 'settings.scoreDisplay.metascore' as TranslationKey },
+  { value: 'userscore', labelKey: 'settings.scoreDisplay.userscore' as TranslationKey },
+  { value: 'both', labelKey: 'settings.scoreDisplay.both' as TranslationKey }
 ] as const
 
 export type ScoreDisplay = (typeof SCORE_DISPLAY_OPTIONS)[number]['value']
 
 export const LAYOUT_OPTIONS = [
-  { value: 'card', label: 'Default card' }
+  { value: 'card', labelKey: 'settings.layout.card' as TranslationKey }
 ] as const
 
 export type LayoutMode = (typeof LAYOUT_OPTIONS)[number]['value']
 
 export const POSITION_OPTIONS = [
-  { value: 'top-right', label: 'Top right' },
-  { value: 'top-left', label: 'Top left' },
-  { value: 'top-center', label: 'Top center' },
-  { value: 'bottom-right', label: 'Bottom right' },
-  { value: 'bottom-left', label: 'Bottom left' },
-  { value: 'bottom-center', label: 'Bottom center' }
+  { value: 'top-right', labelKey: 'settings.position.topRight' as TranslationKey },
+  { value: 'top-left', labelKey: 'settings.position.topLeft' as TranslationKey },
+  { value: 'top-center', labelKey: 'settings.position.topCenter' as TranslationKey },
+  { value: 'bottom-right', labelKey: 'settings.position.bottomRight' as TranslationKey },
+  { value: 'bottom-left', labelKey: 'settings.position.bottomLeft' as TranslationKey },
+  { value: 'bottom-center', labelKey: 'settings.position.bottomCenter' as TranslationKey }
 ] as const
 
 export type PositionOption = (typeof POSITION_OPTIONS)[number]['value']
@@ -48,6 +50,7 @@ type Settings = {
   horizontalOffset: number
   verticalOffset: number
   cacheDays: number
+  language: LanguagePreference
 }
 
 const defaultSettings: Settings = {
@@ -57,7 +60,8 @@ const defaultSettings: Settings = {
   position: 'top-right',
   horizontalOffset: 24,
   verticalOffset: 56,
-  cacheDays: 7
+  cacheDays: 7,
+  language: 'auto'
 }
 
 const readSettings = (): Settings => {
