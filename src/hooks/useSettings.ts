@@ -32,7 +32,10 @@ export type LayoutMode = (typeof LAYOUT_OPTIONS)[number]['value']
 export const POSITION_OPTIONS = [
   { value: 'top-right', label: 'Top right' },
   { value: 'top-left', label: 'Top left' },
-  { value: 'top-center', label: 'Top center' }
+  { value: 'top-center', label: 'Top center' },
+  { value: 'bottom-right', label: 'Bottom right' },
+  { value: 'bottom-left', label: 'Bottom left' },
+  { value: 'bottom-center', label: 'Bottom center' }
 ] as const
 
 export type PositionOption = (typeof POSITION_OPTIONS)[number]['value']

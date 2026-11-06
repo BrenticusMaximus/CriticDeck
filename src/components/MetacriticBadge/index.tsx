@@ -1,5 +1,5 @@
-import { Navigation } from '@decky/ui'
-import React, { useMemo } from 'react'
+import { Navigation, appDetailsClasses } from '@decky/ui'
+import React, { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { FaExternalLinkAlt } from 'react-icons/fa'
 
 import { GameOverview } from '../../hooks/useGameOverview'
@@ -78,12 +78,40 @@ const formatReleaseDate = (value?: string | null, format?: DateFormat) => {
   }
 }
 
+// The badge is positioned absolutely inside the whole (tall, scrollable)
+// page container, not just the hero banner, so CSS `bottom` anchors to the
+// bottom of the entire page instead of the banner. Measure the banner's
+// actual rendered height and compute `top` from it instead.
+const findHeaderElement = (root: HTMLDivElement | null): Element | null => {
+  const siblings = root?.parentElement?.children
+  if (!siblings) return null
+  for (const sibling of siblings) {
+    if (sibling.className.includes(appDetailsClasses.Header)) {
+      return sibling
+    }
+  }
+  return null
+}
+
 export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
   const title = overview?.display_name
   const { settings } = useSettings()
   const { data, loading, error } = useMetacriticScore(title, settings.cacheDays)
   const cardSize = 'card'
   const { position, horizontalOffset, verticalOffset } = settings
+  const rootRef = useRef<HTMLDivElement>(null)
+  const [bannerHeight, setBannerHeight] = useState<number | null>(null)
+  const [badgeHeight, setBadgeHeight] = useState<number | null>(null)
+
+  useLayoutEffect(() => {
+    const header = findHeaderElement(rootRef.current)
+    if (header) {
+      setBannerHeight(header.getBoundingClientRect().height)
+    }
+    if (rootRef.current) {
+      setBadgeHeight(rootRef.current.getBoundingClientRect().height)
+    }
+  }, [loading, data, settings.scoreDisplay, settings.position])
 
   const tone = useMemo(() => toneForScore(data?.score), [data?.score])
   const label = data?.sentiment || (data?.found === false ? 'No score yet' : 'Metascore')
@@ -207,15 +235,26 @@ export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
     </div>
   )
 
+  const isBottom = position.startsWith('bottom')
+  const bottomOverride: React.CSSProperties =
+    isBottom && bannerHeight != null
+      ? {
+          top: `${Math.max(bannerHeight - (badgeHeight ?? 0) - verticalOffset, 0)}px`,
+          bottom: 'auto'
+        }
+      : {}
+
   return (
     <div
+      ref={rootRef}
       id="criticdeck-badge-container"
       className="criticdeck-badge-root"
       data-position={position}
       style={
         {
           '--criticdeck-offset-x': `${horizontalOffset || 0}px`,
-          '--criticdeck-offset-y': `${verticalOffset || 0}px`
+          '--criticdeck-offset-y': `${verticalOffset || 0}px`,
+          ...bottomOverride
         } as React.CSSProperties
       }
     >
