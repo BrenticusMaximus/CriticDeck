@@ -366,7 +366,7 @@ export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
           <div className="criticdeck-score-chip" data-tone={tone} ref={metaChipRef}>
             <span className="criticdeck-score-chip-label">{t('badge.metaScoreLabel')}</span>
             <strong className="criticdeck-score-chip-value">{metascoreDisplay}</strong>
-            <span className="criticdeck-score-chip-sub">{metascoreSub}</span>
+            <span className="criticdeck-score-chip-sub">{metascoreSubCompact}</span>
           </div>
         )}
         {showUserScore && (
@@ -375,7 +375,7 @@ export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
             <strong className="criticdeck-score-chip-value">
               {userScoreValue.toFixed(1)}
             </strong>
-            <span className="criticdeck-score-chip-sub">{userScoreSub}</span>
+            <span className="criticdeck-score-chip-sub">{userScoreSubCompact}</span>
           </div>
         )}
       </div>
