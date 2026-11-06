@@ -1,6 +1,10 @@
 import { fetchNoCors } from '@decky/api'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import type { TranslationKey } from '../i18n'
+
+type Translator = (key: TranslationKey, vars?: Record<string, string | number>) => string
+
 export type MetacriticScorePayload = {
   found: boolean
   title?: string
@@ -16,9 +20,9 @@ export type MetacriticScorePayload = {
   metacritic_url?: string
   user_score?: number
   user_sentiment?: string
-  user_review_count?: string
+  user_review_count?: number
   user_review_breakdown?: ReviewBreakdown
-  critic_review_count?: string
+  critic_review_count?: number
   critic_review_breakdown?: ReviewBreakdown
   must_play?: boolean
   error?: string
@@ -105,7 +109,7 @@ const USER_AGENT =
   'CriticDeck/0.1 (+https://github.com/chrismichaelps/metacritic)'
 
 const CACHE_KEY = 'criticdeck.cache.v2'
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000
+const DAY_MS = 24 * 60 * 60 * 1000
 
 const normalize = (value?: string | null) =>
   (value ?? '')
@@ -210,40 +214,30 @@ const toAbsoluteUrl = (url?: string | null) => {
 
 const queryMetacritic = async (
   title: string,
-  platform: string
+  platform: string,
+  t: Translator
 ): Promise<MetacriticScorePayload> => {
   try {
     const searchData = await requestJson(SEARCH_ENDPOINT(encodeURIComponent(title)))
     const items: SearchItem[] = searchData?.data?.items ?? []
     const match = pickBestMatch(items, title, platform)
     if (!match?.slug) {
-      return { found: false, error: 'No Metacritic entry found' }
+      return { found: false, error: t('metacritic.notFound') }
     }
     const scoreData: ScoreResponse = await requestJson(SCORES_ENDPOINT(match.slug))
     const detail = scoreData?.data?.item
     if (!detail) {
-      return { found: false, error: 'Unable to load Metacritic details' }
+      return { found: false, error: t('metacritic.unableToLoadDetails') }
     }
-    const normalizedPreferred = normalize(platform)
+    // Prefer an exact match for the requested platform (e.g. PC). If this
+    // title isn't available on that platform at all - a Switch exclusive,
+    // for instance - fall back to whichever platform Metacritic returns by
+    // default instead of discarding the score and mislabeling the platform.
     const platformEntry = resolvePlatformEntry(detail, platform)
-    const detailMatchesPreferred =
-      !platformEntry && normalize(detail.platform || '') === normalizedPreferred
-    const criticSummary = platformEntry
-      ? platformEntry.criticScoreSummary
-      : detailMatchesPreferred
-        ? detail.criticScoreSummary
-        : undefined
+    const criticSummary = platformEntry?.criticScoreSummary ?? detail.criticScoreSummary
     const fallbackPlatformSlug = platformEntry?.slug?.toLowerCase() || 'pc'
-    const releaseDate = platformEntry
-      ? platformEntry.releaseDate
-      : detailMatchesPreferred
-        ? detail.releaseDate
-        : undefined
-    const platformName = platformEntry
-      ? platformEntry.name
-      : detailMatchesPreferred
-        ? detail.platform
-        : undefined
+    const releaseDate = platformEntry?.releaseDate ?? detail.releaseDate
+    const platformName = platformEntry?.name ?? detail.platform
     const [userScore, criticExtras] = await Promise.all([
       fetchUserScore(match.slug),
       fetchCriticExtras(match.slug)
@@ -285,7 +279,7 @@ const queryMetacritic = async (
       error:
         err instanceof Error
           ? err.message
-          : 'Unable to contact Metacritic'
+          : t('metacritic.unableToContact')
     }
   }
 }
@@ -317,18 +311,23 @@ const setCached = (key: string, payload: MetacriticScorePayload) => {
   }
 }
 
-export const useMetacriticScore = (title?: string | null) => {
+export const useMetacriticScore = (
+  title?: string | null,
+  cacheDays?: number,
+  t: Translator = (key) => key
+) => {
   const [data, setData] = useState<MetacriticScorePayload | undefined>()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | undefined>()
 
   const normalizedTitle = useMemo(() => title?.trim(), [title])
   const cacheKey = useMemo(() => normalize(normalizedTitle || ''), [normalizedTitle])
+  const cacheTtlMs = Math.max(0, cacheDays ?? 7) * DAY_MS
 
   const refresh = useCallback(async () => {
     if (!normalizedTitle) return
     const cached = cacheKey ? getCached(cacheKey) : undefined
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    if (cached && Date.now() - cached.timestamp < cacheTtlMs) {
       setData(cached.payload)
       return
     }
@@ -336,7 +335,7 @@ export const useMetacriticScore = (title?: string | null) => {
     setLoading(true)
     setError(undefined)
     try {
-      const result = await queryMetacritic(normalizedTitle, 'PC')
+      const result = await queryMetacritic(normalizedTitle, 'PC', t)
       if (result.found && cacheKey) {
         setCached(cacheKey, result)
       }
@@ -349,13 +348,13 @@ export const useMetacriticScore = (title?: string | null) => {
         setData(cached.payload)
         setError(undefined)
       } else {
-        setError(err instanceof Error ? err.message : 'Unexpected error')
+        setError(err instanceof Error ? err.message : t('metacritic.unexpectedError'))
         setData(undefined)
       }
     } finally {
       setLoading(false)
     }
-  }, [normalizedTitle, cacheKey])
+  }, [normalizedTitle, cacheKey, cacheTtlMs, t])
 
   useEffect(() => {
     refresh()
@@ -364,13 +363,18 @@ export const useMetacriticScore = (title?: string | null) => {
   return { data, loading, error, refresh }
 }
 
+// Review counts are kept as raw numbers rather than pre-formatted strings:
+// the payload gets cached for days (per the cacheDays setting), and a
+// translated string baked in at fetch time would stay frozen in whatever
+// language was active then, even after the user switches languages later.
+// Formatting/translating happens at render time instead.
 const fetchUserScore = async (
   slug?: string | null
 ): Promise<
   | {
       score: number
       sentiment?: string
-      reviewCount?: string
+      reviewCount?: number
       breakdown?: ReviewBreakdown
     }
   | undefined
@@ -384,10 +388,7 @@ const fetchUserScore = async (
     return {
       score: summary.score,
       sentiment: summary.sentiment,
-      reviewCount:
-        typeof summary.reviewCount === 'number'
-          ? `Based on ${summary.reviewCount.toLocaleString()} Ratings`
-          : undefined,
+      reviewCount: summary.reviewCount,
       breakdown: {
         positive: summary.positiveCount,
         mixed: summary.neutralCount,
@@ -403,7 +404,7 @@ const fetchCriticExtras = async (
   slug?: string | null
 ): Promise<
   | {
-      reviewCount?: string
+      reviewCount?: number
       breakdown?: ReviewBreakdown
       mustPlay?: boolean
     }
@@ -416,10 +417,7 @@ const fetchCriticExtras = async (
     if (!summary) return undefined
 
     return {
-      reviewCount:
-        typeof summary.reviewCount === 'number'
-          ? `Based on ${summary.reviewCount.toLocaleString()} Critic Reviews`
-          : undefined,
+      reviewCount: summary.reviewCount,
       breakdown: {
         positive: summary.positiveCount,
         mixed: summary.neutralCount,

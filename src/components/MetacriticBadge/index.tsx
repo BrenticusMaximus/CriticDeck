@@ -1,10 +1,11 @@
-import { Navigation } from '@decky/ui'
-import React, { useMemo } from 'react'
+import { Navigation, appDetailsClasses } from '@decky/ui'
+import React, { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { FaExternalLinkAlt } from 'react-icons/fa'
 
-import { useGameOverview } from '../../hooks/useGameOverview'
+import { GameOverview } from '../../hooks/useGameOverview'
 import { useMetacriticScore } from '../../hooks/useMetacriticScore'
 import { useSettings, DateFormat } from '../../hooks/useSettings'
+import { useTranslation, translateSentiment } from '../../i18n'
 import { criticDeckStyle } from './style'
 
 const toneForScore = (score?: number | null) => {
@@ -21,25 +22,29 @@ const toneForUserScore = (score?: number | null) => {
   return 'weak'
 }
 
-const monthNames = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December'
-]
+const MONTH_KEYS = [
+  'month.january',
+  'month.february',
+  'month.march',
+  'month.april',
+  'month.may',
+  'month.june',
+  'month.july',
+  'month.august',
+  'month.september',
+  'month.october',
+  'month.november',
+  'month.december'
+] as const
 
 const pad = (value: number, size: number) =>
   value.toString().padStart(size, '0')
 
-const formatReleaseDate = (value?: string | null, format?: DateFormat) => {
+const formatReleaseDate = (
+  value: string | null | undefined,
+  format: DateFormat | undefined,
+  t: ReturnType<typeof useTranslation>['t']
+) => {
   if (!value || !format) return undefined
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) {
@@ -48,7 +53,7 @@ const formatReleaseDate = (value?: string | null, format?: DateFormat) => {
 
   const year = date.getFullYear()
   const monthIndex = date.getMonth()
-  const monthName = monthNames[monthIndex]
+  const monthName = t(MONTH_KEYS[monthIndex])
   const day = date.getDate()
   const mm = pad(monthIndex + 1, 2)
   const dd = pad(day, 2)
@@ -78,19 +83,49 @@ const formatReleaseDate = (value?: string | null, format?: DateFormat) => {
   }
 }
 
-export const MetacriticBadge = () => {
-  const overview = useGameOverview()
+// The badge is positioned absolutely inside the whole (tall, scrollable)
+// page container, not just the hero banner, so CSS `bottom` anchors to the
+// bottom of the entire page instead of the banner. Measure the banner's
+// actual rendered height and compute `top` from it instead.
+const findHeaderElement = (root: HTMLDivElement | null): Element | null => {
+  const siblings = root?.parentElement?.children
+  if (!siblings) return null
+  for (const sibling of siblings) {
+    if (sibling.className.includes(appDetailsClasses.Header)) {
+      return sibling
+    }
+  }
+  return null
+}
+
+export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
   const title = overview?.display_name
-  const { data, loading, error } = useMetacriticScore(title)
   const { settings } = useSettings()
+  const { t, language } = useTranslation()
+  const { data, loading, error } = useMetacriticScore(title, settings.cacheDays, t)
   const cardSize = 'card'
   const { position, horizontalOffset, verticalOffset } = settings
+  const rootRef = useRef<HTMLDivElement>(null)
+  const [bannerHeight, setBannerHeight] = useState<number | null>(null)
+  const [badgeHeight, setBadgeHeight] = useState<number | null>(null)
+
+  useLayoutEffect(() => {
+    const header = findHeaderElement(rootRef.current)
+    if (header) {
+      setBannerHeight(header.getBoundingClientRect().height)
+    }
+    if (rootRef.current) {
+      setBadgeHeight(rootRef.current.getBoundingClientRect().height)
+    }
+  }, [loading, data, settings.scoreDisplay, settings.position])
 
   const tone = useMemo(() => toneForScore(data?.score), [data?.score])
-  const label = data?.sentiment || (data?.found === false ? 'No score yet' : 'Metascore')
+  const label =
+    translateSentiment(language, data?.sentiment) ||
+    (data?.found === false ? t('badge.noScoreYet') : t('badge.metascoreFallback'))
   const formattedDate = useMemo(
-    () => formatReleaseDate(data?.release_date, settings.dateFormat),
-    [data?.release_date, settings.dateFormat]
+    () => formatReleaseDate(data?.release_date, settings.dateFormat, t),
+    [data?.release_date, settings.dateFormat, t]
   )
   const userScoreValue = data?.user_score
   const userTone = useMemo(
@@ -102,10 +137,10 @@ export const MetacriticBadge = () => {
       return data.score
     }
     if (data?.found) {
-      return 'TBD'
+      return t('badge.tbd')
     }
     return '--'
-  }, [data?.score, data?.found])
+  }, [data?.score, data?.found, t])
 
   if (!title) {
     return <></>
@@ -116,7 +151,6 @@ export const MetacriticBadge = () => {
   const showUserScore =
     (settings.scoreDisplay === 'userscore' || settings.scoreDisplay === 'both') &&
     typeof userScoreValue === 'number'
-  const showBothScores = showMetascore && showUserScore
 
   const renderBreakdown = (breakdown?: {
     positive?: number
@@ -159,47 +193,49 @@ export const MetacriticBadge = () => {
         }}
         disabled={!data?.metacritic_url}
       >
-        <FaExternalLinkAlt style={{ marginRight: 4 }} /> View Details
+        <FaExternalLinkAlt style={{ marginRight: 4 }} /> {t('badge.viewDetails')}
       </button>
     </div>
   )
 
+  const metascoreSub = t('badge.outOfMax', { max: data?.score_max ?? 100 })
+  const userScoreSub =
+    typeof data?.user_review_count === 'number'
+      ? t('metacritic.ofRatingsCount', { count: data.user_review_count.toLocaleString() })
+      : t('badge.outOfTen')
+
   const renderCardLayout = () => (
     <div className="criticdeck-card" data-size={cardSize}>
-      <div className="criticdeck-scores" data-compact={showBothScores}>
+      <div className="criticdeck-scores">
         {showMetascore && (
-          <div
-            className="criticdeck-score-square"
-            data-tone={tone}
-            data-compact={showBothScores}
-          >
-            <strong>{metascoreDisplay}</strong>
-            <span className="criticdeck-score-label">
-              <span>META</span>
-            </span>
+          <div className="criticdeck-score-chip" data-tone={tone}>
+            <div className="criticdeck-score-chip-text">
+              <span className="criticdeck-score-chip-label">{t('badge.metaScoreLabel')}</span>
+              <span className="criticdeck-score-chip-sub">{metascoreSub}</span>
+            </div>
+            <strong className="criticdeck-score-chip-value">{metascoreDisplay}</strong>
           </div>
         )}
         {showUserScore && (
-          <>
-            <div
-              className="criticdeck-score-circle"
-              data-tone={userTone}
-              data-compact={showBothScores}
-            >
-              <strong>{userScoreValue.toFixed(1)}</strong>
-              <span>User</span>
+          <div className="criticdeck-score-chip" data-tone={userTone}>
+            <div className="criticdeck-score-chip-text">
+              <span className="criticdeck-score-chip-label">{t('badge.userScoreLabel')}</span>
+              <span className="criticdeck-score-chip-sub">{userScoreSub}</span>
             </div>
-          </>
+            <strong className="criticdeck-score-chip-value">
+              {userScoreValue.toFixed(1)}
+            </strong>
+          </div>
         )}
       </div>
       <div className="criticdeck-body">
         <div className="criticdeck-title">{data?.title ?? title}</div>
         <div className="criticdeck-meta">
-          {data?.platform || 'Platform unknown'}
+          {data?.platform || t('badge.platformUnknown')}
           {formattedDate ? ` · ${formattedDate}` : ''}
         </div>
         <div className="criticdeck-status">
-          {loading && 'Updating Metacritic score…'}
+          {loading && t('badge.updatingScore')}
           {!loading && error && `⚠️ ${error}`}
           {!loading && !error && label}
         </div>
@@ -208,15 +244,26 @@ export const MetacriticBadge = () => {
     </div>
   )
 
+  const isBottom = position.startsWith('bottom')
+  const bottomOverride: React.CSSProperties =
+    isBottom && bannerHeight != null
+      ? {
+          top: `${Math.max(bannerHeight - (badgeHeight ?? 0) - verticalOffset, 0)}px`,
+          bottom: 'auto'
+        }
+      : {}
+
   return (
     <div
+      ref={rootRef}
       id="criticdeck-badge-container"
       className="criticdeck-badge-root"
       data-position={position}
       style={
         {
           '--criticdeck-offset-x': `${horizontalOffset || 0}px`,
-          '--criticdeck-offset-y': `${verticalOffset || 0}px`
+          '--criticdeck-offset-y': `${verticalOffset || 0}px`,
+          ...bottomOverride
         } as React.CSSProperties
       }
     >

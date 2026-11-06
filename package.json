@@ -1,6 +1,6 @@
 {
   "name": "criticdeck",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "Display Metacritic scores on Steam Deck library pages",
   "type": "module",
   "scripts": {
