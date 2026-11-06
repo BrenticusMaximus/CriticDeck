@@ -43,6 +43,7 @@ export const en = {
   // Settings - layout options
   'settings.layout.card': 'Default card',
   'settings.layout.modern': 'Modern',
+  'settings.layout.modernCompact': 'Modern Compact',
 
   // Settings - position options
   'settings.position.topRight': 'Top right',

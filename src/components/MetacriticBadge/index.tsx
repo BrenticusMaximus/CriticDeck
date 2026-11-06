@@ -232,13 +232,22 @@ export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
     </div>
   )
 
-  const renderClassicLayout = () => (
-    <div className="criticdeck-card" data-size={cardSize} data-layout="classic">
+  // The "Modern" layout keeps a few labels as fixed English text rather
+  // than routing them through t(): this is the original rectangular-chip
+  // design's own wording, not generic app copy, so it stays as-is
+  // regardless of the active language.
+  const modernUserScoreSub =
+    typeof data?.user_review_count === 'number'
+      ? `Based on ${data.user_review_count.toLocaleString()} Ratings`
+      : 'Out of 10'
+
+  const renderModernLayout = () => (
+    <div className="criticdeck-card" data-size={cardSize} data-layout="modern">
       <div className="criticdeck-scores">
         {showMetascore && (
           <div className="criticdeck-score-chip" data-tone={tone}>
             <div className="criticdeck-score-chip-text">
-              <span className="criticdeck-score-chip-label">{t('badge.metaScoreLabel')}</span>
+              <span className="criticdeck-score-chip-label">Meta Critic</span>
               <span className="criticdeck-score-chip-sub">{metascoreSub}</span>
             </div>
             <strong className="criticdeck-score-chip-value">{metascoreDisplay}</strong>
@@ -247,8 +256,8 @@ export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
         {showUserScore && (
           <div className="criticdeck-score-chip" data-tone={userTone}>
             <div className="criticdeck-score-chip-text">
-              <span className="criticdeck-score-chip-label">{t('badge.userScoreLabel')}</span>
-              <span className="criticdeck-score-chip-sub">{userScoreSub}</span>
+              <span className="criticdeck-score-chip-label">User Score</span>
+              <span className="criticdeck-score-chip-sub">{modernUserScoreSub}</span>
             </div>
             <strong className="criticdeck-score-chip-value">
               {userScoreValue.toFixed(1)}
@@ -272,8 +281,8 @@ export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
     </div>
   )
 
-  const renderModernLayout = () => (
-    <div className="criticdeck-card" data-size={cardSize} data-layout="modern">
+  const renderModernCompactLayout = () => (
+    <div className="criticdeck-card" data-size={cardSize} data-layout="modern-compact">
       <div className="criticdeck-scores">
         {showMetascore && (
           <div className="criticdeck-score-chip" data-tone={tone} ref={metaChipRef}>
@@ -310,8 +319,55 @@ export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
     </div>
   )
 
-  const renderCardLayout = () =>
-    settings.layoutMode === 'modern' ? renderModernLayout() : renderClassicLayout()
+  const showBothScores = showMetascore && showUserScore
+
+  const renderDefaultLayout = () => (
+    <div className="criticdeck-card" data-size={cardSize} data-layout="card">
+      <div className="criticdeck-scores" data-compact={showBothScores}>
+        {showMetascore && (
+          <div
+            className="criticdeck-score-square"
+            data-tone={tone}
+            data-compact={showBothScores}
+          >
+            <strong>{metascoreDisplay}</strong>
+            <span className="criticdeck-score-label">
+              <span>META</span>
+            </span>
+          </div>
+        )}
+        {showUserScore && (
+          <div
+            className="criticdeck-score-circle"
+            data-tone={userTone}
+            data-compact={showBothScores}
+          >
+            <strong>{userScoreValue.toFixed(1)}</strong>
+            <span>User</span>
+          </div>
+        )}
+      </div>
+      <div className="criticdeck-body">
+        <div className="criticdeck-title">{data?.title ?? title}</div>
+        <div className="criticdeck-meta">
+          {data?.platform || t('badge.platformUnknown')}
+          {formattedDate ? ` · ${formattedDate}` : ''}
+        </div>
+        <div className="criticdeck-status">
+          {loading && t('badge.updatingScore')}
+          {!loading && error && `⚠️ ${error}`}
+          {!loading && !error && label}
+        </div>
+        {renderActions()}
+      </div>
+    </div>
+  )
+
+  const renderCardLayout = () => {
+    if (settings.layoutMode === 'modern-compact') return renderModernCompactLayout()
+    if (settings.layoutMode === 'modern') return renderModernLayout()
+    return renderDefaultLayout()
+  }
 
   const isBottom = position.startsWith('bottom')
   const bottomOverride: React.CSSProperties =

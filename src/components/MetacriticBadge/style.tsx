@@ -191,12 +191,138 @@ export const criticDeckStyle = (
       max-width: 300px;
     }
 
+    /* "Cartão Padrão" / "Default card" layout - the original square
+       (critic) + circle (user) score indicators, scoped under
+       [data-layout='card'] so its .criticdeck-scores override doesn't
+       affect the other two layouts, which reuse that same class name for a
+       different arrangement. */
+    .criticdeck-card[data-layout='card'] .criticdeck-scores {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 60px;
+    }
+
+    .criticdeck-card[data-layout='card'] .criticdeck-scores[data-compact='true'] {
+      position: relative;
+      min-width: 60px;
+      min-height: 104px;
+      gap: 0;
+    }
+
+    .criticdeck-score-circle,
+    .criticdeck-score-square {
+      width: 60px;
+      height: 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+      text-align: center;
+      padding: 6px;
+    }
+
+    .criticdeck-score-square {
+      justify-content: center;
+      padding-top: 8px;
+      padding-bottom: 8px;
+      gap: 0;
+      background-clip: padding-box;
+      border-radius: 14px;
+    }
+
+    .criticdeck-score-label {
+      display: flex;
+      flex-direction: column;
+      text-align: center;
+      line-height: 1;
+      font-weight: 600;
+      gap: 0;
+    }
+
+    .criticdeck-score-square strong {
+      display: block;
+      line-height: 1;
+      margin: 0;
+    }
+
+    .criticdeck-score-label span {
+      display: block;
+      line-height: 1;
+    }
+
+    .criticdeck-score-circle strong,
+    .criticdeck-score-square strong {
+      font-size: 19px;
+      line-height: 1.1;
+    }
+
+    .criticdeck-score-circle {
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .criticdeck-scores[data-compact='true'] .criticdeck-score-square,
+    .criticdeck-scores[data-compact='true'] .criticdeck-score-circle {
+      position: absolute;
+      padding: 4px;
+      font-size: 11px;
+      justify-content: center;
+      gap: 2px;
+    }
+
+    .criticdeck-score-square[data-compact='true'] {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      left: 50%;
+      top: 0;
+      transform: translateX(-50%);
+    }
+
+    .criticdeck-score-circle[data-compact='true'] {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      left: 50%;
+      top: 58px;
+      transform: translateX(-50%);
+    }
+
+    .criticdeck-score-circle[data-compact='true'] strong,
+    .criticdeck-score-square[data-compact='true'] strong {
+      font-size: 14px;
+    }
+
+    .criticdeck-score-circle[data-tone='great'],
+    .criticdeck-score-square[data-tone='great'] {
+      background: linear-gradient(135deg, #1b5e20, #43a047);
+    }
+
+    .criticdeck-score-circle[data-tone='good'],
+    .criticdeck-score-square[data-tone='good'] {
+      background: linear-gradient(135deg, #f57f17, #ffb74d);
+    }
+
+    .criticdeck-score-circle[data-tone='weak'],
+    .criticdeck-score-square[data-tone='weak'] {
+      background: linear-gradient(135deg, #b71c1c, #e57373);
+    }
+
+    .criticdeck-score-circle[data-tone='unknown'],
+    .criticdeck-score-square[data-tone='unknown'] {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
     /* "Modern" layout - a two-column grid redesign of the card above,
        selected independently via the Layout setting. Every rule here is
-       scoped under [data-layout='modern'] so it only ever overrides the
+       scoped under [data-layout='modern-compact'] so it only ever overrides the
        classic layout's rules on the attribute-tagged root, never the
        classic layout itself. */
-    .criticdeck-card[data-layout='modern'] {
+    .criticdeck-card[data-layout='modern-compact'] {
       --criticdeck-gutter: 0.75rem;
       --criticdeck-v-gutter: 0.375rem;
       min-width: 13.75rem;
@@ -207,7 +333,7 @@ export const criticDeckStyle = (
       gap: var(--criticdeck-gutter);
     }
 
-    .criticdeck-card[data-layout='modern'] .criticdeck-scores {
+    .criticdeck-card[data-layout='modern-compact'] .criticdeck-scores {
       display: grid;
       grid-template-columns: auto;
       align-content: start;
@@ -216,7 +342,7 @@ export const criticDeckStyle = (
       min-width: 0;
     }
 
-    .criticdeck-card[data-layout='modern'] .criticdeck-score-chip {
+    .criticdeck-card[data-layout='modern-compact'] .criticdeck-score-chip {
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -229,21 +355,21 @@ export const criticDeckStyle = (
       padding: 0.25rem;
     }
 
-    .criticdeck-card[data-layout='modern'] .criticdeck-score-chip-label {
+    .criticdeck-card[data-layout='modern-compact'] .criticdeck-score-chip-label {
       font-size: 0.5rem;
       letter-spacing: 0.06em;
     }
 
-    .criticdeck-card[data-layout='modern'] .criticdeck-score-chip-sub {
+    .criticdeck-card[data-layout='modern-compact'] .criticdeck-score-chip-sub {
       font-size: 0.5625rem;
       max-width: none;
     }
 
-    .criticdeck-card[data-layout='modern'] .criticdeck-score-chip-value {
+    .criticdeck-card[data-layout='modern-compact'] .criticdeck-score-chip-value {
       font-size: 1.25rem;
     }
 
-    .criticdeck-card[data-layout='modern'] .criticdeck-body {
+    .criticdeck-card[data-layout='modern-compact'] .criticdeck-body {
       flex: initial;
       min-width: 0;
       display: flex;
@@ -252,7 +378,7 @@ export const criticDeckStyle = (
       text-align: center;
     }
 
-    .criticdeck-card[data-layout='modern'] .criticdeck-info {
+    .criticdeck-card[data-layout='modern-compact'] .criticdeck-info {
       display: flex;
       flex-direction: column;
       gap: 0.25rem;
@@ -260,24 +386,24 @@ export const criticDeckStyle = (
       margin-bottom: auto;
     }
 
-    .criticdeck-card[data-layout='modern'] .criticdeck-title {
+    .criticdeck-card[data-layout='modern-compact'] .criticdeck-title {
       font-size: 0.84375rem;
     }
 
-    .criticdeck-card[data-layout='modern'] .criticdeck-meta {
+    .criticdeck-card[data-layout='modern-compact'] .criticdeck-meta {
       font-size: 0.65625rem;
       margin-bottom: 0.0625rem;
       color: rgba(210, 210, 210, 0.55);
     }
 
-    .criticdeck-card[data-layout='modern'] .criticdeck-actions {
+    .criticdeck-card[data-layout='modern-compact'] .criticdeck-actions {
       margin-top: 0;
       margin-bottom: calc(var(--criticdeck-v-gutter) * 2);
       gap: 0.375rem;
       width: 100%;
     }
 
-    .criticdeck-card[data-layout='modern'] .criticdeck-actions button {
+    .criticdeck-card[data-layout='modern-compact'] .criticdeck-actions button {
       width: 100%;
       display: flex;
       align-items: center;
@@ -287,7 +413,7 @@ export const criticDeckStyle = (
       font-size: 0.75rem;
     }
 
-    .criticdeck-card[data-layout='modern'] .criticdeck-status {
+    .criticdeck-card[data-layout='modern-compact'] .criticdeck-status {
       font-size: 0.8125rem;
     }
   `}</style>
