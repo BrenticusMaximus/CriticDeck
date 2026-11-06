@@ -105,7 +105,7 @@ const USER_AGENT =
   'CriticDeck/0.1 (+https://github.com/chrismichaelps/metacritic)'
 
 const CACHE_KEY = 'criticdeck.cache.v2'
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000
+const DAY_MS = 24 * 60 * 60 * 1000
 
 const normalize = (value?: string | null) =>
   (value ?? '')
@@ -224,26 +224,15 @@ const queryMetacritic = async (
     if (!detail) {
       return { found: false, error: 'Unable to load Metacritic details' }
     }
-    const normalizedPreferred = normalize(platform)
+    // Prefer an exact match for the requested platform (e.g. PC). If this
+    // title isn't available on that platform at all - a Switch exclusive,
+    // for instance - fall back to whichever platform Metacritic returns by
+    // default instead of discarding the score and mislabeling the platform.
     const platformEntry = resolvePlatformEntry(detail, platform)
-    const detailMatchesPreferred =
-      !platformEntry && normalize(detail.platform || '') === normalizedPreferred
-    const criticSummary = platformEntry
-      ? platformEntry.criticScoreSummary
-      : detailMatchesPreferred
-        ? detail.criticScoreSummary
-        : undefined
+    const criticSummary = platformEntry?.criticScoreSummary ?? detail.criticScoreSummary
     const fallbackPlatformSlug = platformEntry?.slug?.toLowerCase() || 'pc'
-    const releaseDate = platformEntry
-      ? platformEntry.releaseDate
-      : detailMatchesPreferred
-        ? detail.releaseDate
-        : undefined
-    const platformName = platformEntry
-      ? platformEntry.name
-      : detailMatchesPreferred
-        ? detail.platform
-        : undefined
+    const releaseDate = platformEntry?.releaseDate ?? detail.releaseDate
+    const platformName = platformEntry?.name ?? detail.platform
     const [userScore, criticExtras] = await Promise.all([
       fetchUserScore(match.slug),
       fetchCriticExtras(match.slug)
@@ -317,18 +306,28 @@ const setCached = (key: string, payload: MetacriticScorePayload) => {
   }
 }
 
-export const useMetacriticScore = (title?: string | null) => {
+export const clearMetacriticCache = () => {
+  if (typeof localStorage === 'undefined') return
+  try {
+    localStorage.removeItem(CACHE_KEY)
+  } catch (_err) {
+    // ignore cache errors
+  }
+}
+
+export const useMetacriticScore = (title?: string | null, cacheDays?: number) => {
   const [data, setData] = useState<MetacriticScorePayload | undefined>()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | undefined>()
 
   const normalizedTitle = useMemo(() => title?.trim(), [title])
   const cacheKey = useMemo(() => normalize(normalizedTitle || ''), [normalizedTitle])
+  const cacheTtlMs = Math.max(0, cacheDays ?? 7) * DAY_MS
 
   const refresh = useCallback(async () => {
     if (!normalizedTitle) return
     const cached = cacheKey ? getCached(cacheKey) : undefined
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    if (cached && Date.now() - cached.timestamp < cacheTtlMs) {
       setData(cached.payload)
       return
     }
@@ -355,7 +354,7 @@ export const useMetacriticScore = (title?: string | null) => {
     } finally {
       setLoading(false)
     }
-  }, [normalizedTitle, cacheKey])
+  }, [normalizedTitle, cacheKey, cacheTtlMs])
 
   useEffect(() => {
     refresh()
