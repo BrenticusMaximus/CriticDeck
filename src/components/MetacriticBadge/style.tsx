@@ -100,7 +100,7 @@ export const criticDeckStyle = (
     .criticdeck-score-chip-platform-note {
       display: block;
       margin-top: 0;
-      font-size: 9px;
+      font-size: 0.4375rem;
       font-style: italic;
       font-weight: 500;
       color: rgba(255, 255, 255, 0.55);
