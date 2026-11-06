@@ -52,13 +52,173 @@ export const criticDeckStyle = (
     }
 
     .criticdeck-scores {
+      display: grid;
+      gap: 8px;
+      min-width: 118px;
+    }
+
+    .criticdeck-score-chip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.08);
+      padding: 7px 8px;
+      min-height: 54px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+    }
+
+    .criticdeck-score-chip-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .criticdeck-score-chip-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .criticdeck-score-chip-sub {
+      font-size: 10px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.7);
+      line-height: 1.2;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      max-width: 70px;
+    }
+
+    /* Sits on its own line right under .criticdeck-score-chip-sub (the
+       review count), disclosing when the user score shown is from a
+       different platform than the rest of the card. */
+    .criticdeck-score-chip-platform-note {
+      display: block;
+      margin-top: 0;
+      font-size: 0.4375rem;
+      font-style: italic;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.55);
+      line-height: 1.1;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .criticdeck-score-chip-value {
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1;
+      color: #fff;
+    }
+
+    .criticdeck-score-chip[data-tone='great'] {
+      background: linear-gradient(
+        135deg,
+        rgba(67, 160, 71, 0.35),
+        rgba(67, 160, 71, 0.12)
+      );
+      border-color: rgba(67, 160, 71, 0.55);
+    }
+
+    .criticdeck-score-chip[data-tone='good'] {
+      background: linear-gradient(
+        135deg,
+        rgba(255, 183, 77, 0.35),
+        rgba(255, 183, 77, 0.12)
+      );
+      border-color: rgba(255, 183, 77, 0.55);
+    }
+
+    .criticdeck-score-chip[data-tone='weak'] {
+      background: linear-gradient(
+        135deg,
+        rgba(229, 115, 115, 0.35),
+        rgba(229, 115, 115, 0.12)
+      );
+      border-color: rgba(229, 115, 115, 0.55);
+    }
+
+    .criticdeck-score-chip[data-tone='unknown'] {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.16);
+    }
+
+    .criticdeck-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .criticdeck-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .criticdeck-meta {
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .criticdeck-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .criticdeck-actions button {
+      border: none;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+      transition: background 0.15s ease;
+    }
+
+    .criticdeck-actions button:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .criticdeck-status {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .criticdeck-user-reviews {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.65);
+      text-align: center;
+      padding-top: 2px;
+    }
+    /* Single size */
+    .criticdeck-card[data-size='card'] {
+      min-width: 240px;
+      max-width: 300px;
+    }
+
+    /* "Cartão Padrão" / "Default card" layout - the original square
+       (critic) + circle (user) score indicators, scoped under
+       [data-layout='card'] so its .criticdeck-scores override doesn't
+       affect the other two layouts, which reuse that same class name for a
+       different arrangement. */
+    .criticdeck-card[data-layout='card'] .criticdeck-scores {
       display: flex;
       flex-direction: column;
       gap: 10px;
       min-width: 60px;
     }
 
-    .criticdeck-scores[data-compact='true'] {
+    .criticdeck-card[data-layout='card'] .criticdeck-scores[data-compact='true'] {
       position: relative;
       min-width: 60px;
       min-height: 104px;
@@ -86,6 +246,7 @@ export const criticDeckStyle = (
       padding-bottom: 8px;
       gap: 0;
       background-clip: padding-box;
+      border-radius: 14px;
     }
 
     .criticdeck-score-label {
@@ -171,66 +332,104 @@ export const criticDeckStyle = (
       background: rgba(255, 255, 255, 0.25);
     }
 
-    .criticdeck-score-square {
-      border-radius: 14px;
+    /* "Modern" layout - a two-column grid redesign of the card above,
+       selected independently via the Layout setting. Every rule here is
+       scoped under [data-layout='modern-compact'] so it only ever overrides the
+       classic layout's rules on the attribute-tagged root, never the
+       classic layout itself. */
+    .criticdeck-card[data-layout='modern-compact'] {
+      --criticdeck-gutter: 0.75rem;
+      --criticdeck-v-gutter: 0.375rem;
+      min-width: 13.75rem;
+      max-width: 20rem;
+      padding: var(--criticdeck-v-gutter) var(--criticdeck-gutter);
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: var(--criticdeck-gutter);
     }
 
-    .criticdeck-body {
-      flex: 1;
+    .criticdeck-card[data-layout='modern-compact'] .criticdeck-scores {
+      display: grid;
+      grid-template-columns: auto;
+      align-content: start;
+      align-self: start;
+      gap: 0.5rem;
+      min-width: 0;
+    }
+
+    .criticdeck-card[data-layout='modern-compact'] .criticdeck-score-chip {
       display: flex;
       flex-direction: column;
-      gap: 4px;
-    }
-
-    .criticdeck-title {
-      font-size: 16px;
-      font-weight: 700;
-      color: #fff;
-    }
-
-    .criticdeck-meta {
-      font-size: 11px;
-      color: rgba(255, 255, 255, 0.7);
-    }
-
-    .criticdeck-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      margin-top: 6px;
-    }
-
-    .criticdeck-actions button {
-      border: none;
-      border-radius: 999px;
-      padding: 6px 10px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      background: rgba(255, 255, 255, 0.12);
-      color: #fff;
-      transition: background 0.15s ease;
-    }
-
-    .criticdeck-actions button:hover {
-      background: rgba(255, 255, 255, 0.25);
-    }
-
-    .criticdeck-status {
-      font-size: 12px;
-      color: rgba(255, 255, 255, 0.8);
-    }
-
-    .criticdeck-user-reviews {
-      font-size: 10px;
-      color: rgba(255, 255, 255, 0.65);
+      align-items: center;
+      align-self: start;
+      justify-content: center;
       text-align: center;
-      padding-top: 2px;
+      gap: 0.0625rem;
+      width: fit-content;
+      min-height: 0;
+      padding: 0.25rem;
     }
-    /* Single size */
-    .criticdeck-card[data-size='card'] {
-      min-width: 240px;
-      max-width: 300px;
+
+    .criticdeck-card[data-layout='modern-compact'] .criticdeck-score-chip-label {
+      font-size: 0.5rem;
+      letter-spacing: 0.06em;
+    }
+
+    .criticdeck-card[data-layout='modern-compact'] .criticdeck-score-chip-sub {
+      font-size: 0.5625rem;
+      max-width: none;
+    }
+
+    .criticdeck-card[data-layout='modern-compact'] .criticdeck-score-chip-value {
+      font-size: 1.25rem;
+    }
+
+    .criticdeck-card[data-layout='modern-compact'] .criticdeck-body {
+      flex: initial;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      text-align: center;
+    }
+
+    .criticdeck-card[data-layout='modern-compact'] .criticdeck-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      margin-top: auto;
+      margin-bottom: auto;
+    }
+
+    .criticdeck-card[data-layout='modern-compact'] .criticdeck-title {
+      font-size: 0.84375rem;
+    }
+
+    .criticdeck-card[data-layout='modern-compact'] .criticdeck-meta {
+      font-size: 0.65625rem;
+      margin-bottom: 0.0625rem;
+      color: rgba(210, 210, 210, 0.55);
+    }
+
+    .criticdeck-card[data-layout='modern-compact'] .criticdeck-actions {
+      margin-top: 0;
+      margin-bottom: calc(var(--criticdeck-v-gutter) * 2);
+      gap: 0.375rem;
+      width: 100%;
+    }
+
+    .criticdeck-card[data-layout='modern-compact'] .criticdeck-actions button {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 62.4375rem;
+      padding: 0.375rem 0.625rem;
+      font-size: 0.75rem;
+    }
+
+    .criticdeck-card[data-layout='modern-compact'] .criticdeck-status {
+      font-size: 0.8125rem;
     }
   `}</style>
 )
