@@ -105,7 +105,7 @@ const USER_AGENT =
   'CriticDeck/0.1 (+https://github.com/chrismichaelps/metacritic)'
 
 const CACHE_KEY = 'criticdeck.cache.v2'
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000
+const DAY_MS = 24 * 60 * 60 * 1000
 
 const normalize = (value?: string | null) =>
   (value ?? '')
@@ -306,18 +306,19 @@ const setCached = (key: string, payload: MetacriticScorePayload) => {
   }
 }
 
-export const useMetacriticScore = (title?: string | null) => {
+export const useMetacriticScore = (title?: string | null, cacheDays?: number) => {
   const [data, setData] = useState<MetacriticScorePayload | undefined>()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | undefined>()
 
   const normalizedTitle = useMemo(() => title?.trim(), [title])
   const cacheKey = useMemo(() => normalize(normalizedTitle || ''), [normalizedTitle])
+  const cacheTtlMs = Math.max(0, cacheDays ?? 7) * DAY_MS
 
   const refresh = useCallback(async () => {
     if (!normalizedTitle) return
     const cached = cacheKey ? getCached(cacheKey) : undefined
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    if (cached && Date.now() - cached.timestamp < cacheTtlMs) {
       setData(cached.payload)
       return
     }
@@ -344,7 +345,7 @@ export const useMetacriticScore = (title?: string | null) => {
     } finally {
       setLoading(false)
     }
-  }, [normalizedTitle, cacheKey])
+  }, [normalizedTitle, cacheKey, cacheTtlMs])
 
   useEffect(() => {
     refresh()

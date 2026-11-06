@@ -347,6 +347,40 @@ const SettingsPanel = () => {
             </div>
           </div>
         </PanelSectionRow>
+        <PanelSectionRow>
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              width: '100%',
+              gap: 12,
+              paddingRight: 12,
+              marginLeft: -4
+            }}
+          >
+            <span style={{ paddingLeft: 2, fontWeight: 600 }}>Cache duration</span>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                <span style={{ opacity: 0.8 }}>Keep successful scores cached for</span>
+                <span style={{ opacity: 0.8 }}>
+                  {settings.cacheDays} {settings.cacheDays === 1 ? 'day' : 'days'}
+                </span>
+              </div>
+              <input
+                type="range"
+                min={1}
+                max={30}
+                value={settings.cacheDays}
+                onChange={(e) =>
+                  setSetting({
+                    cacheDays: Math.max(1, parseInt(e.target.value || '1', 10))
+                  })
+                }
+                style={{ width: '100%' }}
+              />
+            </label>
+          </div>
+        </PanelSectionRow>
       </div>
     </PanelSection>
   )
