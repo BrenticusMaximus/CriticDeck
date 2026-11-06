@@ -48,6 +48,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'settings.layout.card': 'Cartão padrão',
   'settings.layout.modern': 'Moderno',
   'settings.layout.modernCompact': 'Moderno Compacto',
+  'settings.layout.minimal': 'Minimal',
 
   // Settings - position options
   'settings.position.topRight': 'Superior direita',

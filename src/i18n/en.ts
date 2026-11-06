@@ -46,6 +46,7 @@ export const en = {
   'settings.layout.card': 'Default card',
   'settings.layout.modern': 'Modern',
   'settings.layout.modernCompact': 'Modern Compact',
+  'settings.layout.minimal': 'Minimal',
 
   // Settings - position options
   'settings.position.topRight': 'Top right',

@@ -272,7 +272,7 @@ export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
   )
 
   const renderModernLayout = () => (
-    <div className="criticdeck-card" data-size={cardSize} data-layout="modern">
+    <div className="criticdeck-card" key={settings.layoutMode} data-size={cardSize} data-layout="modern">
       <div className="criticdeck-scores">
         {showMetascore && (
           <div className="criticdeck-score-chip" data-tone={tone}>
@@ -317,7 +317,7 @@ export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
   )
 
   const renderModernCompactLayout = () => (
-    <div className="criticdeck-card" data-size={cardSize} data-layout="modern-compact">
+    <div className="criticdeck-card" key={settings.layoutMode} data-size={cardSize} data-layout="modern-compact">
       <div className="criticdeck-scores">
         {showMetascore && (
           <div className="criticdeck-score-chip" data-tone={tone} ref={metaChipRef}>
@@ -359,10 +359,42 @@ export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
     </div>
   )
 
+  const renderMinimalLayout = () => (
+    <div className="criticdeck-card" key={settings.layoutMode} data-size={cardSize} data-layout="minimal">
+      <div className="criticdeck-scores">
+        {showMetascore && (
+          <div className="criticdeck-score-chip" data-tone={tone} ref={metaChipRef}>
+            <span className="criticdeck-score-chip-label">{t('badge.metaScoreLabel')}</span>
+            <strong className="criticdeck-score-chip-value">{metascoreDisplay}</strong>
+            <span className="criticdeck-score-chip-sub">{metascoreSub}</span>
+          </div>
+        )}
+        {showUserScore && (
+          <div className="criticdeck-score-chip" data-tone={userTone} ref={userChipRef}>
+            <span className="criticdeck-score-chip-label">{t('badge.userScoreLabel')}</span>
+            <strong className="criticdeck-score-chip-value">
+              {userScoreValue.toFixed(1)}
+            </strong>
+            <span className="criticdeck-score-chip-sub">{userScoreSub}</span>
+          </div>
+        )}
+      </div>
+      <div className="criticdeck-meta">
+        {data?.platform || t('badge.platformUnknown')}
+        {formattedDate ? ` · ${formattedDate}` : ''}
+      </div>
+      <div className="criticdeck-status">
+        {loading && t('badge.updatingScore')}
+        {!loading && error && `⚠️ ${error}`}
+        {!loading && !error && label}
+      </div>
+    </div>
+  )
+
   const showBothScores = showMetascore && showUserScore
 
   const renderDefaultLayout = () => (
-    <div className="criticdeck-card" data-size={cardSize} data-layout="card">
+    <div className="criticdeck-card" key={settings.layoutMode} data-size={cardSize} data-layout="card">
       <div className="criticdeck-scores" data-compact={showBothScores}>
         {showMetascore && (
           <div
@@ -406,6 +438,7 @@ export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
   const renderCardLayout = () => {
     if (settings.layoutMode === 'modern-compact') return renderModernCompactLayout()
     if (settings.layoutMode === 'modern') return renderModernLayout()
+    if (settings.layoutMode === 'minimal') return renderMinimalLayout()
     return renderDefaultLayout()
   }
 

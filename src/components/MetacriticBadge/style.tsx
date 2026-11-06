@@ -370,17 +370,20 @@ export const criticDeckStyle = (
       padding: 0.25rem;
     }
 
-    .criticdeck-card[data-layout='modern-compact'] .criticdeck-score-chip-label {
+    .criticdeck-card[data-layout='modern-compact'] .criticdeck-score-chip-label,
+    .criticdeck-card[data-layout='minimal'] .criticdeck-score-chip-label {
       font-size: 0.5rem;
       letter-spacing: 0.06em;
     }
 
-    .criticdeck-card[data-layout='modern-compact'] .criticdeck-score-chip-sub {
+    .criticdeck-card[data-layout='modern-compact'] .criticdeck-score-chip-sub,
+    .criticdeck-card[data-layout='minimal'] .criticdeck-score-chip-sub {
       font-size: 0.5625rem;
       max-width: none;
     }
 
-    .criticdeck-card[data-layout='modern-compact'] .criticdeck-score-chip-value {
+    .criticdeck-card[data-layout='modern-compact'] .criticdeck-score-chip-value,
+    .criticdeck-card[data-layout='minimal'] .criticdeck-score-chip-value {
       font-size: 1.25rem;
     }
 
@@ -430,6 +433,56 @@ export const criticDeckStyle = (
 
     .criticdeck-card[data-layout='modern-compact'] .criticdeck-status {
       font-size: 0.8125rem;
+    }
+
+    /* "Minimal" layout - just the two score chips side by side, then the
+       platform/date line, then the sentiment line. No title, no action
+       button. Chip typography matches "Modern Compact" exactly (see the
+       shared selectors above) so the two layouts read as the same visual
+       language at a smaller footprint. */
+    .criticdeck-card[data-layout='minimal'] {
+      --criticdeck-chip-gutter: 0.75rem;
+      --criticdeck-padding: 0.375rem;
+      min-width: 13.75rem;
+      max-width: 20rem;
+      padding: var(--criticdeck-padding);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+
+    .criticdeck-card[data-layout='minimal'] .criticdeck-scores {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      gap: var(--criticdeck-chip-gutter);
+      min-width: 0;
+    }
+
+    .criticdeck-card[data-layout='minimal'] .criticdeck-score-chip {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 0.0625rem;
+      width: fit-content;
+      min-height: 0;
+      padding: 0.25rem;
+    }
+
+    .criticdeck-card[data-layout='minimal'] .criticdeck-meta {
+      font-size: 0.65625rem;
+      color: rgba(210, 210, 210, 0.55);
+      text-align: center;
+      margin-top: 0.4375rem;
+    }
+
+    .criticdeck-card[data-layout='minimal'] .criticdeck-status {
+      font-size: 0.8125rem;
+      text-align: center;
+      margin-top: 0rem;
     }
   `}</style>
 )
