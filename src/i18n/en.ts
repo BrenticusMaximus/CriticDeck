@@ -42,6 +42,7 @@ export const en = {
 
   // Settings - layout options
   'settings.layout.card': 'Default card',
+  'settings.layout.modern': 'Modern',
 
   // Settings - position options
   'settings.position.topRight': 'Top right',

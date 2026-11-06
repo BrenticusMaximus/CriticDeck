@@ -26,7 +26,8 @@ export const SCORE_DISPLAY_OPTIONS = [
 export type ScoreDisplay = (typeof SCORE_DISPLAY_OPTIONS)[number]['value']
 
 export const LAYOUT_OPTIONS = [
-  { value: 'card', labelKey: 'settings.layout.card' as TranslationKey }
+  { value: 'card', labelKey: 'settings.layout.card' as TranslationKey },
+  { value: 'modern', labelKey: 'settings.layout.modern' as TranslationKey }
 ] as const
 
 export type LayoutMode = (typeof LAYOUT_OPTIONS)[number]['value']
