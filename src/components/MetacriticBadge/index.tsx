@@ -124,7 +124,11 @@ export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
   const tone = useMemo(() => toneForScore(data?.score), [data?.score])
   const label =
     translateSentiment(language, data?.sentiment) ||
-    (data?.found === false ? t('badge.noScoreYet') : t('badge.metascoreFallback'))
+    (data?.found === false
+      ? t('badge.noScoreYet')
+      : typeof data?.score === 'number'
+        ? t('badge.metascoreFallback')
+        : t('badge.notEnoughReviews'))
   const formattedDate = useMemo(
     () => formatReleaseDate(data?.release_date, settings.dateFormat, t),
     [data?.release_date, settings.dateFormat, t]

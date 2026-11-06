@@ -269,7 +269,12 @@ const queryMetacritic = async (
         .filter((p): p is string => Boolean(p)),
       score: criticSummary?.score || undefined,
       score_max: criticSummary?.max || undefined,
-      sentiment: criticSummary?.sentiment,
+      // Fall back to the lead platform's sentiment when the resolved
+      // platform has too few critic reviews for its own Metascore/
+      // sentiment (score is "TBD" in that case) - a sentiment from the
+      // dominant platform is a much better signal than the generic
+      // "Metascore" fallback text.
+      sentiment: criticSummary?.sentiment ?? detail.criticScoreSummary?.sentiment,
       release_date: releaseDate,
       description: detail.description,
       metacritic_url: metacriticUrl,

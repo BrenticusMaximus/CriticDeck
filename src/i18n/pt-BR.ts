@@ -67,6 +67,7 @@ export const ptBR: Record<keyof typeof en, string> = {
   'badge.platformUnknown': 'Plataforma desconhecida',
   'badge.noScoreYet': 'Sem nota ainda',
   'badge.metascoreFallback': 'Nota Metacritic',
+  'badge.notEnoughReviews': 'Avaliações Insuficientes',
   'badge.tbd': 'A definir',
 
   // Metacritic API - status/error text

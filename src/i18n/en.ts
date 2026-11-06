@@ -65,6 +65,7 @@ export const en = {
   'badge.platformUnknown': 'Platform unknown',
   'badge.noScoreYet': 'No score yet',
   'badge.metascoreFallback': 'Metascore',
+  'badge.notEnoughReviews': 'Not Enough Reviews',
   'badge.tbd': 'TBD',
 
   // Metacritic API - status/error text
