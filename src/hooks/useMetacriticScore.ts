@@ -224,26 +224,15 @@ const queryMetacritic = async (
     if (!detail) {
       return { found: false, error: 'Unable to load Metacritic details' }
     }
-    const normalizedPreferred = normalize(platform)
+    // Prefer an exact match for the requested platform (e.g. PC). If this
+    // title isn't available on that platform at all - a Switch exclusive,
+    // for instance - fall back to whichever platform Metacritic returns by
+    // default instead of discarding the score and mislabeling the platform.
     const platformEntry = resolvePlatformEntry(detail, platform)
-    const detailMatchesPreferred =
-      !platformEntry && normalize(detail.platform || '') === normalizedPreferred
-    const criticSummary = platformEntry
-      ? platformEntry.criticScoreSummary
-      : detailMatchesPreferred
-        ? detail.criticScoreSummary
-        : undefined
+    const criticSummary = platformEntry?.criticScoreSummary ?? detail.criticScoreSummary
     const fallbackPlatformSlug = platformEntry?.slug?.toLowerCase() || 'pc'
-    const releaseDate = platformEntry
-      ? platformEntry.releaseDate
-      : detailMatchesPreferred
-        ? detail.releaseDate
-        : undefined
-    const platformName = platformEntry
-      ? platformEntry.name
-      : detailMatchesPreferred
-        ? detail.platform
-        : undefined
+    const releaseDate = platformEntry?.releaseDate ?? detail.releaseDate
+    const platformName = platformEntry?.name ?? detail.platform
     const [userScore, criticExtras] = await Promise.all([
       fetchUserScore(match.slug),
       fetchCriticExtras(match.slug)
