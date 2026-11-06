@@ -164,7 +164,7 @@ export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
   const userScorePlatformNote =
     data?.user_score_platform &&
     data.user_score_platform.toLowerCase() !== (data?.platform ?? '').toLowerCase()
-      ? `(${data.user_score_platform})`
+      ? data.user_score_platform
       : undefined
   const userScoreSub =
     typeof data?.user_review_count === 'number'
