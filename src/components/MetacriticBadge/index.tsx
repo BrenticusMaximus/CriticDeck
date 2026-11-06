@@ -143,7 +143,6 @@ export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
   const showUserScore =
     (settings.scoreDisplay === 'userscore' || settings.scoreDisplay === 'both') &&
     typeof userScoreValue === 'number'
-  const showBothScores = showMetascore && showUserScore
 
   const renderBreakdown = (breakdown?: {
     positive?: number
@@ -191,32 +190,31 @@ export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
     </div>
   )
 
+  const metascoreSub = `Out of ${data?.score_max ?? 100}`
+  const userScoreSub = data?.user_review_count || 'Out of 10'
+
   const renderCardLayout = () => (
     <div className="criticdeck-card" data-size={cardSize}>
-      <div className="criticdeck-scores" data-compact={showBothScores}>
+      <div className="criticdeck-scores">
         {showMetascore && (
-          <div
-            className="criticdeck-score-square"
-            data-tone={tone}
-            data-compact={showBothScores}
-          >
-            <strong>{metascoreDisplay}</strong>
-            <span className="criticdeck-score-label">
-              <span>META</span>
-            </span>
+          <div className="criticdeck-score-chip" data-tone={tone}>
+            <div className="criticdeck-score-chip-text">
+              <span className="criticdeck-score-chip-label">META SCORE</span>
+              <span className="criticdeck-score-chip-sub">{metascoreSub}</span>
+            </div>
+            <strong className="criticdeck-score-chip-value">{metascoreDisplay}</strong>
           </div>
         )}
         {showUserScore && (
-          <>
-            <div
-              className="criticdeck-score-circle"
-              data-tone={userTone}
-              data-compact={showBothScores}
-            >
-              <strong>{userScoreValue.toFixed(1)}</strong>
-              <span>User</span>
+          <div className="criticdeck-score-chip" data-tone={userTone}>
+            <div className="criticdeck-score-chip-text">
+              <span className="criticdeck-score-chip-label">USER SCORE</span>
+              <span className="criticdeck-score-chip-sub">{userScoreSub}</span>
             </div>
-          </>
+            <strong className="criticdeck-score-chip-value">
+              {userScoreValue.toFixed(1)}
+            </strong>
+          </div>
         )}
       </div>
       <div className="criticdeck-body">
