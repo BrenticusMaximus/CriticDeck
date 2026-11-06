@@ -1,8 +1,8 @@
-import { Navigation } from '@decky/ui'
-import React, { useMemo } from 'react'
+import { Navigation, appDetailsClasses } from '@decky/ui'
+import React, { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { FaExternalLinkAlt } from 'react-icons/fa'
 
-import { useGameOverview } from '../../hooks/useGameOverview'
+import { GameOverview } from '../../hooks/useGameOverview'
 import { useMetacriticScore } from '../../hooks/useMetacriticScore'
 import { useSettings, DateFormat } from '../../hooks/useSettings'
 import { criticDeckStyle } from './style'
@@ -78,13 +78,40 @@ const formatReleaseDate = (value?: string | null, format?: DateFormat) => {
   }
 }
 
-export const MetacriticBadge = () => {
-  const overview = useGameOverview()
+// The badge is positioned absolutely inside the whole (tall, scrollable)
+// page container, not just the hero banner, so CSS `bottom` anchors to the
+// bottom of the entire page instead of the banner. Measure the banner's
+// actual rendered height and compute `top` from it instead.
+const findHeaderElement = (root: HTMLDivElement | null): Element | null => {
+  const siblings = root?.parentElement?.children
+  if (!siblings) return null
+  for (const sibling of siblings) {
+    if (sibling.className.includes(appDetailsClasses.Header)) {
+      return sibling
+    }
+  }
+  return null
+}
+
+export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
   const title = overview?.display_name
-  const { data, loading, error } = useMetacriticScore(title)
   const { settings } = useSettings()
+  const { data, loading, error } = useMetacriticScore(title, settings.cacheDays)
   const cardSize = 'card'
   const { position, horizontalOffset, verticalOffset } = settings
+  const rootRef = useRef<HTMLDivElement>(null)
+  const [bannerHeight, setBannerHeight] = useState<number | null>(null)
+  const [badgeHeight, setBadgeHeight] = useState<number | null>(null)
+
+  useLayoutEffect(() => {
+    const header = findHeaderElement(rootRef.current)
+    if (header) {
+      setBannerHeight(header.getBoundingClientRect().height)
+    }
+    if (rootRef.current) {
+      setBadgeHeight(rootRef.current.getBoundingClientRect().height)
+    }
+  }, [loading, data, settings.scoreDisplay, settings.position])
 
   const tone = useMemo(() => toneForScore(data?.score), [data?.score])
   const label = data?.sentiment || (data?.found === false ? 'No score yet' : 'Metascore')
@@ -116,7 +143,6 @@ export const MetacriticBadge = () => {
   const showUserScore =
     (settings.scoreDisplay === 'userscore' || settings.scoreDisplay === 'both') &&
     typeof userScoreValue === 'number'
-  const showBothScores = showMetascore && showUserScore
 
   const renderBreakdown = (breakdown?: {
     positive?: number
@@ -164,32 +190,31 @@ export const MetacriticBadge = () => {
     </div>
   )
 
+  const metascoreSub = `Out of ${data?.score_max ?? 100}`
+  const userScoreSub = data?.user_review_count || 'Out of 10'
+
   const renderCardLayout = () => (
     <div className="criticdeck-card" data-size={cardSize}>
-      <div className="criticdeck-scores" data-compact={showBothScores}>
+      <div className="criticdeck-scores">
         {showMetascore && (
-          <div
-            className="criticdeck-score-square"
-            data-tone={tone}
-            data-compact={showBothScores}
-          >
-            <strong>{metascoreDisplay}</strong>
-            <span className="criticdeck-score-label">
-              <span>META</span>
-            </span>
+          <div className="criticdeck-score-chip" data-tone={tone}>
+            <div className="criticdeck-score-chip-text">
+              <span className="criticdeck-score-chip-label">META SCORE</span>
+              <span className="criticdeck-score-chip-sub">{metascoreSub}</span>
+            </div>
+            <strong className="criticdeck-score-chip-value">{metascoreDisplay}</strong>
           </div>
         )}
         {showUserScore && (
-          <>
-            <div
-              className="criticdeck-score-circle"
-              data-tone={userTone}
-              data-compact={showBothScores}
-            >
-              <strong>{userScoreValue.toFixed(1)}</strong>
-              <span>User</span>
+          <div className="criticdeck-score-chip" data-tone={userTone}>
+            <div className="criticdeck-score-chip-text">
+              <span className="criticdeck-score-chip-label">USER SCORE</span>
+              <span className="criticdeck-score-chip-sub">{userScoreSub}</span>
             </div>
-          </>
+            <strong className="criticdeck-score-chip-value">
+              {userScoreValue.toFixed(1)}
+            </strong>
+          </div>
         )}
       </div>
       <div className="criticdeck-body">
@@ -208,15 +233,26 @@ export const MetacriticBadge = () => {
     </div>
   )
 
+  const isBottom = position.startsWith('bottom')
+  const bottomOverride: React.CSSProperties =
+    isBottom && bannerHeight != null
+      ? {
+          top: `${Math.max(bannerHeight - (badgeHeight ?? 0) - verticalOffset, 0)}px`,
+          bottom: 'auto'
+        }
+      : {}
+
   return (
     <div
+      ref={rootRef}
       id="criticdeck-badge-container"
       className="criticdeck-badge-root"
       data-position={position}
       style={
         {
           '--criticdeck-offset-x': `${horizontalOffset || 0}px`,
-          '--criticdeck-offset-y': `${verticalOffset || 0}px`
+          '--criticdeck-offset-y': `${verticalOffset || 0}px`,
+          ...bottomOverride
         } as React.CSSProperties
       }
     >

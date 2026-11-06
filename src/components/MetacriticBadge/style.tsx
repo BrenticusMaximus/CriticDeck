@@ -52,127 +52,85 @@ export const criticDeckStyle = (
     }
 
     .criticdeck-scores {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      min-width: 60px;
+      display: grid;
+      gap: 8px;
+      min-width: 118px;
     }
 
-    .criticdeck-scores[data-compact='true'] {
-      position: relative;
-      min-width: 60px;
-      min-height: 104px;
-      gap: 0;
-    }
-
-    .criticdeck-score-circle,
-    .criticdeck-score-square {
-      width: 60px;
-      height: 60px;
+    .criticdeck-score-chip {
       display: flex;
-      flex-direction: column;
       align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 11px;
-      text-transform: uppercase;
-      text-align: center;
-      padding: 6px;
+      justify-content: space-between;
+      gap: 8px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background: rgba(255, 255, 255, 0.08);
+      padding: 7px 8px;
+      min-height: 54px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
     }
 
-    .criticdeck-score-square {
-      justify-content: center;
-      padding-top: 8px;
-      padding-bottom: 8px;
-      gap: 0;
-      background-clip: padding-box;
-    }
-
-    .criticdeck-score-label {
+    .criticdeck-score-chip-text {
       display: flex;
       flex-direction: column;
-      text-align: center;
-      line-height: 1;
-      font-weight: 600;
-      gap: 0;
-    }
-
-    .criticdeck-score-square strong {
-      display: block;
-      line-height: 1;
-      margin: 0;
-    }
-
-    .criticdeck-score-label span {
-      display: block;
-      line-height: 1;
-    }
-
-    .criticdeck-score-circle strong,
-    .criticdeck-score-square strong {
-      font-size: 19px;
-      line-height: 1.1;
-    }
-
-    .criticdeck-score-circle {
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.12);
-    }
-
-    .criticdeck-scores[data-compact='true'] .criticdeck-score-square,
-    .criticdeck-scores[data-compact='true'] .criticdeck-score-circle {
-      position: absolute;
-      padding: 4px;
-      font-size: 11px;
-      justify-content: center;
       gap: 2px;
+      min-width: 0;
     }
 
-    .criticdeck-score-square[data-compact='true'] {
-      width: 52px;
-      height: 52px;
-      border-radius: 14px;
-      left: 50%;
-      top: 0;
-      transform: translateX(-50%);
+    .criticdeck-score-chip-label {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: rgba(255, 255, 255, 0.9);
     }
 
-    .criticdeck-score-circle[data-compact='true'] {
-      width: 46px;
-      height: 46px;
-      border-radius: 50%;
-      left: 50%;
-      top: 58px;
-      transform: translateX(-50%);
+    .criticdeck-score-chip-sub {
+      font-size: 10px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.7);
+      line-height: 1.2;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      max-width: 70px;
     }
 
-    .criticdeck-score-circle[data-compact='true'] strong,
-    .criticdeck-score-square[data-compact='true'] strong {
-      font-size: 14px;
+    .criticdeck-score-chip-value {
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1;
+      color: #fff;
     }
 
-    .criticdeck-score-circle[data-tone='great'],
-    .criticdeck-score-square[data-tone='great'] {
-      background: linear-gradient(135deg, #1b5e20, #43a047);
+    .criticdeck-score-chip[data-tone='great'] {
+      background: linear-gradient(
+        135deg,
+        rgba(67, 160, 71, 0.35),
+        rgba(67, 160, 71, 0.12)
+      );
+      border-color: rgba(67, 160, 71, 0.55);
     }
 
-    .criticdeck-score-circle[data-tone='good'],
-    .criticdeck-score-square[data-tone='good'] {
-      background: linear-gradient(135deg, #f57f17, #ffb74d);
+    .criticdeck-score-chip[data-tone='good'] {
+      background: linear-gradient(
+        135deg,
+        rgba(255, 183, 77, 0.35),
+        rgba(255, 183, 77, 0.12)
+      );
+      border-color: rgba(255, 183, 77, 0.55);
     }
 
-    .criticdeck-score-circle[data-tone='weak'],
-    .criticdeck-score-square[data-tone='weak'] {
-      background: linear-gradient(135deg, #b71c1c, #e57373);
+    .criticdeck-score-chip[data-tone='weak'] {
+      background: linear-gradient(
+        135deg,
+        rgba(229, 115, 115, 0.35),
+        rgba(229, 115, 115, 0.12)
+      );
+      border-color: rgba(229, 115, 115, 0.55);
     }
 
-    .criticdeck-score-circle[data-tone='unknown'],
-    .criticdeck-score-square[data-tone='unknown'] {
-      background: rgba(255, 255, 255, 0.25);
-    }
-
-    .criticdeck-score-square {
-      border-radius: 14px;
+    .criticdeck-score-chip[data-tone='unknown'] {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.16);
     }
 
     .criticdeck-body {

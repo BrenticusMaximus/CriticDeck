@@ -32,7 +32,10 @@ export type LayoutMode = (typeof LAYOUT_OPTIONS)[number]['value']
 export const POSITION_OPTIONS = [
   { value: 'top-right', label: 'Top right' },
   { value: 'top-left', label: 'Top left' },
-  { value: 'top-center', label: 'Top center' }
+  { value: 'top-center', label: 'Top center' },
+  { value: 'bottom-right', label: 'Bottom right' },
+  { value: 'bottom-left', label: 'Bottom left' },
+  { value: 'bottom-center', label: 'Bottom center' }
 ] as const
 
 export type PositionOption = (typeof POSITION_OPTIONS)[number]['value']
@@ -44,6 +47,7 @@ type Settings = {
   position: PositionOption
   horizontalOffset: number
   verticalOffset: number
+  cacheDays: number
 }
 
 const defaultSettings: Settings = {
@@ -52,7 +56,8 @@ const defaultSettings: Settings = {
   layoutMode: 'card',
   position: 'top-right',
   horizontalOffset: 24,
-  verticalOffset: 56
+  verticalOffset: 56,
+  cacheDays: 7
 }
 
 const readSettings = (): Settings => {
@@ -74,21 +79,35 @@ const readSettings = (): Settings => {
   }
 }
 
+// Every component calls useSettings() independently, so a change written by
+// one instance (e.g. the Settings panel) needs to be pushed to every other
+// already-mounted instance (e.g. the badge) instead of only taking effect
+// the next time that instance happens to remount.
+let sharedSettings: Settings = readSettings()
+const listeners = new Set<(settings: Settings) => void>()
+
+const publishSettings = (next: Settings) => {
+  sharedSettings = next
+  listeners.forEach((listener) => listener(next))
+}
+
 export const useSettings = () => {
-  const [settings, setSettings] = useState<Settings>(defaultSettings)
+  const [settings, setSettings] = useState<Settings>(sharedSettings)
 
   useEffect(() => {
-    setSettings(readSettings())
+    setSettings(sharedSettings)
+    listeners.add(setSettings)
+    return () => {
+      listeners.delete(setSettings)
+    }
   }, [])
 
   const setPartialSetting = useCallback((partial: Partial<Settings>) => {
-    setSettings((prev) => {
-      const next = { ...prev, ...partial }
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-      }
-      return next
-    })
+    const next = { ...sharedSettings, ...partial }
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+    }
+    publishSettings(next)
   }, [])
 
   const availableFormats = useMemo(() => DATE_FORMAT_OPTIONS, [])
