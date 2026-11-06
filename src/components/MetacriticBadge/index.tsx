@@ -80,8 +80,8 @@ const formatReleaseDate = (value?: string | null, format?: DateFormat) => {
 
 export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
   const title = overview?.display_name
-  const { data, loading, error } = useMetacriticScore(title)
   const { settings } = useSettings()
+  const { data, loading, error } = useMetacriticScore(title, settings.cacheDays)
   const cardSize = 'card'
   const { position, horizontalOffset, verticalOffset } = settings
 

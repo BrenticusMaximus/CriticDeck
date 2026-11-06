@@ -135,6 +135,22 @@ const SettingsPanel = () => {
           />
         </div>
       </PanelSectionRow>
+      <PanelSectionRow>
+        <div style={settingRowStyle}>
+          <SliderField
+            label="Cache duration"
+            layout="below"
+            description="How long a successfully fetched score stays cached before being refreshed."
+            value={settings.cacheDays}
+            min={1}
+            max={30}
+            step={1}
+            showValue
+            valueSuffix=" days"
+            onChange={(cacheDays) => setSetting({ cacheDays })}
+          />
+        </div>
+      </PanelSectionRow>
     </PanelSection>
   )
 }
