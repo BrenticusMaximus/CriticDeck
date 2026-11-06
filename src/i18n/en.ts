@@ -70,7 +70,10 @@ export const en = {
   'metacritic.unableToLoadDetails': 'Unable to load Metacritic details',
   'metacritic.unableToContact': 'Unable to contact Metacritic',
   'metacritic.unexpectedError': 'Unexpected error',
-  'metacritic.ofRatingsCount': 'of {count} ratings',
+  'metacritic.ofRatingsCount': 'based on {count} ratings',
+  'metacritic.ratingsCountShort': '{count} ratings',
+  'metacritic.ofCriticReviewsCount': 'based on {count} critic reviews',
+  'metacritic.criticReviewsCountShort': '{count} reviews',
 
   // Metacritic API - sentiment labels (fixed vocabulary returned by the API)
   'metacritic.sentiment.universalAcclaim': 'Universal acclaim',

@@ -94,6 +94,21 @@ export const criticDeckStyle = (
       max-width: 70px;
     }
 
+    /* Sits on its own line right under .criticdeck-score-chip-sub (the
+       review count), disclosing when the user score shown is from a
+       different platform than the rest of the card. */
+    .criticdeck-score-chip-platform-note {
+      display: block;
+      margin-top: 0;
+      font-size: 9px;
+      font-style: italic;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.55);
+      line-height: 1.1;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
     .criticdeck-score-chip-value {
       font-size: 22px;
       font-weight: 800;

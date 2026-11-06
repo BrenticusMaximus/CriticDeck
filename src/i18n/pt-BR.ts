@@ -72,7 +72,10 @@ export const ptBR: Record<keyof typeof en, string> = {
   'metacritic.unableToLoadDetails': 'Não foi possível carregar os detalhes da Metacritic',
   'metacritic.unableToContact': 'Não foi possível contatar a Metacritic',
   'metacritic.unexpectedError': 'Erro inesperado',
-  'metacritic.ofRatingsCount': 'de {count} avaliações',
+  'metacritic.ofRatingsCount': 'baseado em {count} avaliações',
+  'metacritic.ratingsCountShort': '{count} avaliações',
+  'metacritic.ofCriticReviewsCount': 'baseado em {count} avaliações de críticos',
+  'metacritic.criticReviewsCountShort': '{count} avaliações',
 
   // Metacritic API - sentiment labels (fixed vocabulary returned by the API)
   'metacritic.sentiment.universalAcclaim': 'Aclamação universal',

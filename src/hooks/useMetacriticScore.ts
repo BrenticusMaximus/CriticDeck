@@ -20,6 +20,12 @@ export type MetacriticScorePayload = {
   metacritic_url?: string
   user_score?: number
   user_sentiment?: string
+  // The user-score API has no platform filter - it always returns the
+  // title's lead platform, which may differ from `platform` above (the
+  // platform resolved for the critic score/release date). Surfaced so the
+  // UI can disclose when the user score shown isn't for the game's PC
+  // (or otherwise preferred) release.
+  user_score_platform?: string
   user_review_count?: number
   user_review_breakdown?: ReviewBreakdown
   critic_review_count?: number
@@ -71,6 +77,10 @@ type CriticSummary = {
   max?: number
   score?: number
   sentiment?: string
+  reviewCount?: number
+  positiveCount?: number
+  neutralCount?: number
+  negativeCount?: number
 }
 
 type StatsResponse = {
@@ -96,14 +106,15 @@ const SCORES_ENDPOINT = (
   slug: string
 ) =>
   `https://backend.metacritic.com/games/metacritic/${slug}/web?componentName=scores&componentDisplayName=Scores&componentType=ScoreSummary`
+// Note: this endpoint has no platform filter - the backend always returns
+// the title's lead platform's user score, regardless of any `platform`/
+// `platformId` query param. There is currently no way to get a
+// platform-specific user score from this API, unlike the critic score
+// (see criticScoreSummary per entry in SCORES_ENDPOINT's `platforms[]`).
 const USER_STATS_ENDPOINT = (
   slug: string
 ) =>
   `https://backend.metacritic.com/reviews/metacritic/user/games/${slug}/stats/web?componentName=user-score-summary&componentDisplayName=User+Score+Summary&componentType=MetaScoreSummary`
-const CRITIC_STATS_ENDPOINT = (
-  slug: string
-) =>
-  `https://backend.metacritic.com/reviews/metacritic/critic/games/${slug}/stats/web?componentName=critic-score-summary&componentDisplayName=Critic+Score+Summary&componentType=MetaScoreSummary`
 
 const USER_AGENT =
   'CriticDeck/0.1 (+https://github.com/chrismichaelps/metacritic)'
@@ -238,10 +249,7 @@ const queryMetacritic = async (
     const fallbackPlatformSlug = platformEntry?.slug?.toLowerCase() || 'pc'
     const releaseDate = platformEntry?.releaseDate ?? detail.releaseDate
     const platformName = platformEntry?.name ?? detail.platform
-    const [userScore, criticExtras] = await Promise.all([
-      fetchUserScore(match.slug),
-      fetchCriticExtras(match.slug)
-    ])
+    const userScore = await fetchUserScore(match.slug)
 
     const criticReviewsPath =
       criticSummary?.url ||
@@ -267,11 +275,22 @@ const queryMetacritic = async (
       metacritic_url: metacriticUrl,
       user_score: userScore?.score,
       user_sentiment: userScore?.sentiment,
+      user_score_platform: userScore?.score != null ? detail.platform : undefined,
       user_review_count: userScore?.reviewCount,
       user_review_breakdown: userScore?.breakdown,
-      critic_review_count: criticExtras?.reviewCount,
-      critic_review_breakdown: criticExtras?.breakdown,
-      must_play: detail.mustPlay ?? criticExtras?.mustPlay
+      // Sourced from the already platform-resolved criticSummary (not a
+      // separate, platform-blind stats call) so the review count always
+      // matches the platform the score itself belongs to - see the "A
+      // definir" / mismatched-review-count investigation.
+      critic_review_count: criticSummary?.reviewCount,
+      critic_review_breakdown: criticSummary
+        ? {
+            positive: criticSummary.positiveCount,
+            mixed: criticSummary.neutralCount,
+            negative: criticSummary.negativeCount
+          }
+        : undefined,
+      must_play: detail.mustPlay
     }
   } catch (err) {
     return {
@@ -400,32 +419,3 @@ const fetchUserScore = async (
   }
 }
 
-const fetchCriticExtras = async (
-  slug?: string | null
-): Promise<
-  | {
-      reviewCount?: number
-      breakdown?: ReviewBreakdown
-      mustPlay?: boolean
-    }
-  | undefined
-> => {
-  if (!slug) return undefined
-  try {
-    const payload: StatsResponse = await requestJson(CRITIC_STATS_ENDPOINT(slug))
-    const summary = payload?.data?.item
-    if (!summary) return undefined
-
-    return {
-      reviewCount: summary.reviewCount,
-      breakdown: {
-        positive: summary.positiveCount,
-        mixed: summary.neutralCount,
-        negative: summary.negativeCount
-      },
-      mustPlay: undefined
-    }
-  } catch (_error) {
-    return undefined
-  }
-}

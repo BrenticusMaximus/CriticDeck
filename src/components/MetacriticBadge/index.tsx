@@ -143,10 +143,36 @@ export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
     }
     return '--'
   }, [data?.score, data?.found, t])
-  const metascoreSub = t('badge.outOfMax', { max: data?.score_max ?? 100 })
+  // "Modern" shows the full, translated API-style phrasing ("based on N
+  // ratings"/"based on N critic reviews"); "Modern Compact" shows just the
+  // count ("N ratings"/"N reviews") on its own line below the score, to
+  // keep the auto-sized chip tight. Both fall back to the score's own
+  // denominator when the API has no review count for this title.
+  const metascoreSub =
+    typeof data?.critic_review_count === 'number'
+      ? t('metacritic.ofCriticReviewsCount', { count: data.critic_review_count.toLocaleString() })
+      : t('badge.outOfMax', { max: data?.score_max ?? 100 })
+  const metascoreSubCompact =
+    typeof data?.critic_review_count === 'number'
+      ? t('metacritic.criticReviewsCountShort', { count: data.critic_review_count.toLocaleString() })
+      : t('badge.outOfMax', { max: data?.score_max ?? 100 })
+  // The user score API has no platform filter (see useMetacriticScore.ts),
+  // so it always reflects the title's lead platform, which may not be the
+  // platform resolved above. Disclose that mismatch instead of silently
+  // presenting another platform's user score as if it were the resolved
+  // one's.
+  const userScorePlatformNote =
+    data?.user_score_platform &&
+    data.user_score_platform.toLowerCase() !== (data?.platform ?? '').toLowerCase()
+      ? `(${data.user_score_platform})`
+      : undefined
   const userScoreSub =
     typeof data?.user_review_count === 'number'
       ? t('metacritic.ofRatingsCount', { count: data.user_review_count.toLocaleString() })
+      : t('badge.outOfTen')
+  const userScoreSubCompact =
+    typeof data?.user_review_count === 'number'
+      ? t('metacritic.ratingsCountShort', { count: data.user_review_count.toLocaleString() })
       : t('badge.outOfTen')
 
   // The "modern" layout auto-sizes the critic/user score chips to their own
@@ -174,7 +200,16 @@ export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
     metaEl.style.minHeight = `${maxHeight}px`
     userEl.style.minWidth = `${maxWidth}px`
     userEl.style.minHeight = `${maxHeight}px`
-  }, [metascoreDisplay, metascoreSub, userScoreValue, userScoreSub, tone, userTone, settings.layoutMode])
+  }, [
+    metascoreDisplay,
+    metascoreSubCompact,
+    userScoreValue,
+    userScoreSubCompact,
+    userScorePlatformNote,
+    tone,
+    userTone,
+    settings.layoutMode
+  ])
 
   if (!title) {
     return <></>
@@ -232,15 +267,6 @@ export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
     </div>
   )
 
-  // The "Modern" layout keeps a few labels as fixed English text rather
-  // than routing them through t(): this is the original rectangular-chip
-  // design's own wording, not generic app copy, so it stays as-is
-  // regardless of the active language.
-  const modernUserScoreSub =
-    typeof data?.user_review_count === 'number'
-      ? `Based on ${data.user_review_count.toLocaleString()} Ratings`
-      : 'Out of 10'
-
   const renderModernLayout = () => (
     <div className="criticdeck-card" data-size={cardSize} data-layout="modern">
       <div className="criticdeck-scores">
@@ -257,7 +283,12 @@ export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
           <div className="criticdeck-score-chip" data-tone={userTone}>
             <div className="criticdeck-score-chip-text">
               <span className="criticdeck-score-chip-label">User Score</span>
-              <span className="criticdeck-score-chip-sub">{modernUserScoreSub}</span>
+              <span className="criticdeck-score-chip-sub">{userScoreSub}</span>
+              {userScorePlatformNote && (
+                <span className="criticdeck-score-chip-platform-note">
+                  {userScorePlatformNote}
+                </span>
+              )}
             </div>
             <strong className="criticdeck-score-chip-value">
               {userScoreValue.toFixed(1)}
@@ -288,7 +319,7 @@ export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
           <div className="criticdeck-score-chip" data-tone={tone} ref={metaChipRef}>
             <span className="criticdeck-score-chip-label">{t('badge.metaScoreLabel')}</span>
             <strong className="criticdeck-score-chip-value">{metascoreDisplay}</strong>
-            <span className="criticdeck-score-chip-sub">{metascoreSub}</span>
+            <span className="criticdeck-score-chip-sub">{metascoreSubCompact}</span>
           </div>
         )}
         {showUserScore && (
@@ -297,7 +328,12 @@ export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
             <strong className="criticdeck-score-chip-value">
               {userScoreValue.toFixed(1)}
             </strong>
-            <span className="criticdeck-score-chip-sub">{userScoreSub}</span>
+            <span className="criticdeck-score-chip-sub">{userScoreSubCompact}</span>
+            {userScorePlatformNote && (
+              <span className="criticdeck-score-chip-platform-note">
+                {userScorePlatformNote}
+              </span>
+            )}
           </div>
         )}
       </div>
