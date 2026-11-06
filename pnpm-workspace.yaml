@@ -1,0 +1,5 @@
+peerDependencyRules:
+  ignoreMissing:
+    - react
+    - react-dom
+    - decky-frontend-lib
