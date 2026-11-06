@@ -306,6 +306,15 @@ const setCached = (key: string, payload: MetacriticScorePayload) => {
   }
 }
 
+export const clearMetacriticCache = () => {
+  if (typeof localStorage === 'undefined') return
+  try {
+    localStorage.removeItem(CACHE_KEY)
+  } catch (_err) {
+    // ignore cache errors
+  }
+}
+
 export const useMetacriticScore = (title?: string | null, cacheDays?: number) => {
   const [data, setData] = useState<MetacriticScorePayload | undefined>()
   const [loading, setLoading] = useState(false)

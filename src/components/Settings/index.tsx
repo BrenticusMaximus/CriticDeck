@@ -1,6 +1,7 @@
 import { Navigation, PanelSection, PanelSectionRow } from '@decky/ui'
-import React from 'react'
+import React, { useState } from 'react'
 
+import { clearMetacriticCache } from '../../hooks/useMetacriticScore'
 import {
   DATE_FORMAT_OPTIONS,
   SCORE_DISPLAY_OPTIONS,
@@ -12,6 +13,7 @@ import buildInfo from '../../build-info.json'
 
 const SettingsPanel = () => {
   const { settings, setSetting } = useSettings()
+  const [cacheCleared, setCacheCleared] = useState(false)
 
   return (
     <PanelSection title="CriticDeck">
@@ -379,6 +381,25 @@ const SettingsPanel = () => {
                 style={{ width: '100%' }}
               />
             </label>
+            <button
+              type="button"
+              onClick={() => {
+                clearMetacriticCache()
+                setCacheCleared(true)
+              }}
+              style={{
+                padding: '10px 14px',
+                borderRadius: 6,
+                border: '1px solid rgba(255,255,255,0.2)',
+                backgroundColor: 'rgba(255,255,255,0.04)',
+                width: '100%',
+                textAlign: 'center',
+                color: 'inherit',
+                cursor: 'pointer'
+              }}
+            >
+              {cacheCleared ? 'Cache cleared' : 'Clear cached scores'}
+            </button>
           </div>
         </PanelSectionRow>
       </div>
