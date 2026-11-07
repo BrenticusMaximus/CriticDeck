@@ -396,6 +396,11 @@ export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
               {userScoreValue.toFixed(1)}
             </strong>
             <span className="criticdeck-score-chip-sub">{userScoreSubCompact}</span>
+            {userScorePlatformNote && (
+              <span className="criticdeck-score-chip-platform-note">
+                {userScorePlatformNote}
+              </span>
+            )}
           </div>
         )}
       </div>
