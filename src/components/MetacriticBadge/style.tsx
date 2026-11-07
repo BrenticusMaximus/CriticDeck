@@ -443,9 +443,19 @@ export const criticDeckStyle = (
     .criticdeck-card[data-layout='minimal'] {
       --criticdeck-chip-gutter: 0.75rem;
       --criticdeck-padding: 0.375rem;
-      min-width: 13.75rem;
+      --criticdeck-padding-x: 0.75rem;
+      /* Explicit 0, not just "no min-width here": omitting the property
+         entirely doesn't clear it, it un-shadows the earlier, equal-
+         specificity [data-size='card'] rule's min-width: 240px (every
+         layout carries data-size="card"), which is worse than the 220px
+         this layout had before. The card should hug its actual content
+         width (the score chip row is usually the widest line) - a fixed
+         floor caused big, inconsistent-looking lateral gaps on games
+         whose chip content happens to be narrower than it. The chips
+         below carry their own min-width instead. */
+      min-width: 0;
       max-width: 20rem;
-      padding: var(--criticdeck-padding);
+      padding: var(--criticdeck-padding) var(--criticdeck-padding-x);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -468,6 +478,7 @@ export const criticDeckStyle = (
       text-align: center;
       gap: 0.0625rem;
       width: fit-content;
+      min-width: 4.5rem;
       min-height: 0;
       padding: 0.25rem;
     }
