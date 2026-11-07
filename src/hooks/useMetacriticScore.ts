@@ -144,6 +144,18 @@ const requestJson = async (url: string) => {
   return response.json() as Promise<any>
 }
 
+// Whether `needle` appears as a contiguous run of whole tokens inside
+// `haystack` - e.g. ["kodi"] does NOT match inside ["starboard",
+// "kodiakwhale"], unlike a raw substring check on the joined string (which
+// would wrongly match "kodi" inside "kodiakwhale").
+const tokensContainSequence = (haystack: string[], needle: string[]) => {
+  if (!needle.length || needle.length > haystack.length) return false
+  for (let i = 0; i <= haystack.length - needle.length; i++) {
+    if (needle.every((token, j) => haystack[i + j] === token)) return true
+  }
+  return false
+}
+
 const pickBestMatch = (
   items: SearchItem[],
   title: string,
@@ -151,6 +163,7 @@ const pickBestMatch = (
 ) => {
   const normalizedTarget = normalize(title)
   const normalizedPlatform = normalize(platformHint)
+  const targetTokens = normalizedTarget.split(' ').filter(Boolean)
 
   let bestScore = Number.NEGATIVE_INFINITY
   let bestMatch: SearchItem | undefined
@@ -161,7 +174,6 @@ const pickBestMatch = (
     const normalizedTitle = normalize(item.title)
     if (!normalizedTitle.length) continue
 
-    const targetTokens = normalizedTarget.split(' ').filter(Boolean)
     const titleTokens = normalizedTitle.split(' ').filter(Boolean)
     const titleTokenSet = new Set(titleTokens)
     const overlapCount = targetTokens.reduce(
@@ -169,13 +181,29 @@ const pickBestMatch = (
       0
     )
 
+    const isExactMatch = normalizedTitle === normalizedTarget
+    const isWholeWordPrefix =
+      titleTokens.length >= targetTokens.length &&
+      targetTokens.every((token, i) => titleTokens[i] === token)
+    const isWholeWordSubstring = tokensContainSequence(titleTokens, targetTokens)
+
+    // Require some real whole-word textual relation before considering this
+    // candidate at all - the search endpoint happily returns completely
+    // unrelated titles (e.g. searching "Kodi" returns "Starboard
+    // (kodiakwhale)") and without this gate, the loop below would still pick
+    // one of them as "best" since the score starts at -Infinity.
+    const hasTextualRelation = isExactMatch || isWholeWordPrefix || isWholeWordSubstring || overlapCount > 0
+    if (!hasTextualRelation) {
+      continue
+    }
+
     let similarity = 0
-    if (normalizedTitle === normalizedTarget) {
+    if (isExactMatch) {
       similarity += 1000
     }
-    if (normalizedTitle.startsWith(normalizedTarget)) {
+    if (isWholeWordPrefix) {
       similarity += 120
-    } else if (normalizedTitle.includes(normalizedTarget)) {
+    } else if (isWholeWordSubstring) {
       similarity += 40
     }
     similarity += overlapCount * 8
@@ -199,7 +227,14 @@ const pickBestMatch = (
       bestMatch = item
     }
   }
-  return bestMatch
+  // A single common word overlapping (e.g. "games", "amazon", "better") isn't
+  // enough to call this a real match - confirmed against live searches for
+  // "Epic Games Store", "Amazon Games", and "Better xCloud", which all landed
+  // on an unrelated title in the 25-31 range. Genuine matches (exact title, a
+  // whole-word prefix/substring, or most of the title's words overlapping)
+  // score well above this.
+  const MIN_MATCH_SCORE = 40
+  return bestScore >= MIN_MATCH_SCORE ? bestMatch : undefined
 }
 
 const resolvePlatformEntry = (
