@@ -219,6 +219,17 @@ export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
     return <></>
   }
 
+  // `found: false` is overloaded: it also covers a title that WAS matched but has
+  // no critic score anywhere (e.g. Teslagrad Remastered), which still deserves the
+  // "not enough reviews" card. Only hide the widget entirely when there was no
+  // plausible title match at all (no slug) - that's the real "not a reviewable
+  // game" signal, e.g. a non-Steam shortcut for a launcher/emulator/app (Kodi,
+  // Firefox, EmulationStation, Epic Games, Amazon Games...), which app_type alone
+  // can't distinguish from an actual non-Steam game.
+  if (!loading && data?.found === false && !data?.slug) {
+    return <></>
+  }
+
   const showMetascore =
     settings.scoreDisplay === 'metascore' || settings.scoreDisplay === 'both'
   const showUserScore =
