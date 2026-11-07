@@ -219,6 +219,15 @@ export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
     return <></>
   }
 
+  // Don't render anything until the lookup has actually resolved (cache hit or
+  // finished fetch) - otherwise a title that's about to be hidden below still
+  // flashes a "loading" card for the duration of the fetch. A cache hit sets
+  // `data` synchronously without ever setting `loading`, so this doesn't delay
+  // the common case.
+  if (loading || (!data && !error)) {
+    return <></>
+  }
+
   // `found: false` is overloaded: it also covers a title that WAS matched but has
   // no critic score anywhere (e.g. Teslagrad Remastered), which still deserves the
   // "not enough reviews" card. Only hide the widget entirely when there was no
@@ -226,7 +235,7 @@ export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
   // game" signal, e.g. a non-Steam shortcut for a launcher/emulator/app (Kodi,
   // Firefox, EmulationStation, Epic Games, Amazon Games...), which app_type alone
   // can't distinguish from an actual non-Steam game.
-  if (!loading && data?.found === false && !data?.slug) {
+  if (data?.found === false && !data?.slug) {
     return <></>
   }
 
