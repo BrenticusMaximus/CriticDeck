@@ -1,10 +1,11 @@
-import { Navigation } from '@decky/ui'
-import React, { useMemo } from 'react'
+import { Navigation, appDetailsClasses } from '@decky/ui'
+import React, { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { FaExternalLinkAlt } from 'react-icons/fa'
 
-import { useGameOverview } from '../../hooks/useGameOverview'
+import { GameOverview } from '../../hooks/useGameOverview'
 import { useMetacriticScore } from '../../hooks/useMetacriticScore'
 import { useSettings, DateFormat } from '../../hooks/useSettings'
+import { useTranslation, translateSentiment } from '../../i18n'
 import { criticDeckStyle } from './style'
 
 const toneForScore = (score?: number | null) => {
@@ -21,25 +22,29 @@ const toneForUserScore = (score?: number | null) => {
   return 'weak'
 }
 
-const monthNames = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December'
-]
+const MONTH_KEYS = [
+  'month.january',
+  'month.february',
+  'month.march',
+  'month.april',
+  'month.may',
+  'month.june',
+  'month.july',
+  'month.august',
+  'month.september',
+  'month.october',
+  'month.november',
+  'month.december'
+] as const
 
 const pad = (value: number, size: number) =>
   value.toString().padStart(size, '0')
 
-const formatReleaseDate = (value?: string | null, format?: DateFormat) => {
+const formatReleaseDate = (
+  value: string | null | undefined,
+  format: DateFormat | undefined,
+  t: ReturnType<typeof useTranslation>['t']
+) => {
   if (!value || !format) return undefined
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) {
@@ -48,7 +53,7 @@ const formatReleaseDate = (value?: string | null, format?: DateFormat) => {
 
   const year = date.getFullYear()
   const monthIndex = date.getMonth()
-  const monthName = monthNames[monthIndex]
+  const monthName = t(MONTH_KEYS[monthIndex])
   const day = date.getDate()
   const mm = pad(monthIndex + 1, 2)
   const dd = pad(day, 2)
@@ -78,19 +83,55 @@ const formatReleaseDate = (value?: string | null, format?: DateFormat) => {
   }
 }
 
-export const MetacriticBadge = () => {
-  const overview = useGameOverview()
+// The badge is positioned absolutely inside the whole (tall, scrollable)
+// page container, not just the hero banner, so CSS `bottom` anchors to the
+// bottom of the entire page instead of the banner. Measure the banner's
+// actual rendered height and compute `top` from it instead.
+const findHeaderElement = (root: HTMLDivElement | null): Element | null => {
+  const siblings = root?.parentElement?.children
+  if (!siblings) return null
+  for (const sibling of siblings) {
+    if (sibling.className.includes(appDetailsClasses.Header)) {
+      return sibling
+    }
+  }
+  return null
+}
+
+export const MetacriticBadge = ({ overview }: { overview?: GameOverview }) => {
   const title = overview?.display_name
-  const { data, loading, error } = useMetacriticScore(title)
   const { settings } = useSettings()
+  const { t, language } = useTranslation()
+  const { data, loading, error } = useMetacriticScore(title, settings.cacheDays, t)
   const cardSize = 'card'
   const { position, horizontalOffset, verticalOffset } = settings
+  const rootRef = useRef<HTMLDivElement>(null)
+  const metaChipRef = useRef<HTMLDivElement>(null)
+  const userChipRef = useRef<HTMLDivElement>(null)
+  const [bannerHeight, setBannerHeight] = useState<number | null>(null)
+  const [badgeHeight, setBadgeHeight] = useState<number | null>(null)
+
+  useLayoutEffect(() => {
+    const header = findHeaderElement(rootRef.current)
+    if (header) {
+      setBannerHeight(header.getBoundingClientRect().height)
+    }
+    if (rootRef.current) {
+      setBadgeHeight(rootRef.current.getBoundingClientRect().height)
+    }
+  }, [loading, data, settings.scoreDisplay, settings.position])
 
   const tone = useMemo(() => toneForScore(data?.score), [data?.score])
-  const label = data?.sentiment || (data?.found === false ? 'No score yet' : 'Metascore')
+  const label =
+    translateSentiment(language, data?.sentiment) ||
+    (data?.found === false
+      ? t('badge.noScoreYet')
+      : typeof data?.score === 'number'
+        ? t('badge.metascoreFallback')
+        : t('badge.notEnoughReviews'))
   const formattedDate = useMemo(
-    () => formatReleaseDate(data?.release_date, settings.dateFormat),
-    [data?.release_date, settings.dateFormat]
+    () => formatReleaseDate(data?.release_date, settings.dateFormat, t),
+    [data?.release_date, settings.dateFormat, t]
   )
   const userScoreValue = data?.user_score
   const userTone = useMemo(
@@ -102,12 +143,99 @@ export const MetacriticBadge = () => {
       return data.score
     }
     if (data?.found) {
-      return 'TBD'
+      return t('badge.tbd')
     }
     return '--'
-  }, [data?.score, data?.found])
+  }, [data?.score, data?.found, t])
+  // "Modern" shows the full, translated API-style phrasing ("based on N
+  // ratings"/"based on N critic reviews"); "Modern Compact" shows just the
+  // count ("N ratings"/"N reviews") on its own line below the score, to
+  // keep the auto-sized chip tight. Both fall back to the score's own
+  // denominator when the API has no review count for this title.
+  const metascoreSub =
+    typeof data?.critic_review_count === 'number'
+      ? t('metacritic.ofCriticReviewsCount', { count: data.critic_review_count.toLocaleString() })
+      : t('badge.outOfMax', { max: data?.score_max ?? 100 })
+  const metascoreSubCompact =
+    typeof data?.critic_review_count === 'number'
+      ? t('metacritic.criticReviewsCountShort', { count: data.critic_review_count.toLocaleString() })
+      : t('badge.outOfMax', { max: data?.score_max ?? 100 })
+  // The user score API has no platform filter (see useMetacriticScore.ts),
+  // so it always reflects the title's lead platform, which may not be the
+  // platform resolved above. Disclose that mismatch instead of silently
+  // presenting another platform's user score as if it were the resolved
+  // one's.
+  const userScorePlatformNote =
+    data?.user_score_platform &&
+    data.user_score_platform.toLowerCase() !== (data?.platform ?? '').toLowerCase()
+      ? data.user_score_platform
+      : undefined
+  const userScoreSub =
+    typeof data?.user_review_count === 'number'
+      ? t('metacritic.ofRatingsCount', { count: data.user_review_count.toLocaleString() })
+      : t('badge.outOfTen')
+  const userScoreSubCompact =
+    typeof data?.user_review_count === 'number'
+      ? t('metacritic.ratingsCountShort', { count: data.user_review_count.toLocaleString() })
+      : t('badge.outOfTen')
+
+  // The "modern" layout auto-sizes the critic/user score chips to their own
+  // content (the review-count sub-text's length varies per game), so they
+  // naturally end up different sizes. Measure both at their natural size and
+  // force them to the larger of the two, so they always match without
+  // hardcoding a fixed size. A no-op on the classic layout, whose chips
+  // don't carry these refs.
+  useLayoutEffect(() => {
+    const metaEl = metaChipRef.current
+    const userEl = userChipRef.current
+    if (!metaEl || !userEl) return
+
+    metaEl.style.minWidth = ''
+    metaEl.style.minHeight = ''
+    userEl.style.minWidth = ''
+    userEl.style.minHeight = ''
+
+    const metaRect = metaEl.getBoundingClientRect()
+    const userRect = userEl.getBoundingClientRect()
+    const maxWidth = Math.max(metaRect.width, userRect.width)
+    const maxHeight = Math.max(metaRect.height, userRect.height)
+
+    metaEl.style.minWidth = `${maxWidth}px`
+    metaEl.style.minHeight = `${maxHeight}px`
+    userEl.style.minWidth = `${maxWidth}px`
+    userEl.style.minHeight = `${maxHeight}px`
+  }, [
+    metascoreDisplay,
+    metascoreSubCompact,
+    userScoreValue,
+    userScoreSubCompact,
+    userScorePlatformNote,
+    tone,
+    userTone,
+    settings.layoutMode
+  ])
 
   if (!title) {
+    return <></>
+  }
+
+  // Don't render anything until the lookup has actually resolved (cache hit or
+  // finished fetch) - otherwise a title that's about to be hidden below still
+  // flashes a "loading" card for the duration of the fetch. A cache hit sets
+  // `data` synchronously without ever setting `loading`, so this doesn't delay
+  // the common case.
+  if (loading || (!data && !error)) {
+    return <></>
+  }
+
+  // `found: false` is overloaded: it also covers a title that WAS matched but has
+  // no critic score anywhere (e.g. Teslagrad Remastered), which still deserves the
+  // "not enough reviews" card. Only hide the widget entirely when there was no
+  // plausible title match at all (no slug) - that's the real "not a reviewable
+  // game" signal, e.g. a non-Steam shortcut for a launcher/emulator/app (Kodi,
+  // Firefox, EmulationStation, Epic Games, Amazon Games...), which app_type alone
+  // can't distinguish from an actual non-Steam game.
+  if (data?.found === false && !data?.slug) {
     return <></>
   }
 
@@ -116,7 +244,6 @@ export const MetacriticBadge = () => {
   const showUserScore =
     (settings.scoreDisplay === 'userscore' || settings.scoreDisplay === 'both') &&
     typeof userScoreValue === 'number'
-  const showBothScores = showMetascore && showUserScore
 
   const renderBreakdown = (breakdown?: {
     positive?: number
@@ -159,13 +286,140 @@ export const MetacriticBadge = () => {
         }}
         disabled={!data?.metacritic_url}
       >
-        <FaExternalLinkAlt style={{ marginRight: 4 }} /> View Details
+        <FaExternalLinkAlt style={{ marginRight: 4 }} /> {t('badge.viewDetails')}
       </button>
     </div>
   )
 
-  const renderCardLayout = () => (
-    <div className="criticdeck-card" data-size={cardSize}>
+  const renderModernLayout = () => (
+    <div className="criticdeck-card" key={settings.layoutMode} data-size={cardSize} data-layout="modern">
+      <div className="criticdeck-scores">
+        {showMetascore && (
+          <div className="criticdeck-score-chip" data-tone={tone}>
+            <div className="criticdeck-score-chip-text">
+              <span className="criticdeck-score-chip-label">Meta Critic</span>
+              <span className="criticdeck-score-chip-sub">{metascoreSub}</span>
+            </div>
+            <strong className="criticdeck-score-chip-value">{metascoreDisplay}</strong>
+          </div>
+        )}
+        {showUserScore && (
+          <div className="criticdeck-score-chip" data-tone={userTone}>
+            <div className="criticdeck-score-chip-text">
+              <span className="criticdeck-score-chip-label">User Score</span>
+              <span className="criticdeck-score-chip-sub">{userScoreSub}</span>
+              {userScorePlatformNote && (
+                <span className="criticdeck-score-chip-platform-note">
+                  {userScorePlatformNote}
+                </span>
+              )}
+            </div>
+            <strong className="criticdeck-score-chip-value">
+              {userScoreValue.toFixed(1)}
+            </strong>
+          </div>
+        )}
+      </div>
+      <div className="criticdeck-body">
+        <div className="criticdeck-title">{data?.title ?? title}</div>
+        <div className="criticdeck-meta">
+          {data?.platform || t('badge.platformUnknown')}
+          {formattedDate ? ` · ${formattedDate}` : ''}
+        </div>
+        <div className="criticdeck-status">
+          {loading && t('badge.updatingScore')}
+          {!loading && error && `⚠️ ${error}`}
+          {!loading && !error && label}
+        </div>
+        {renderActions()}
+      </div>
+    </div>
+  )
+
+  const renderModernCompactLayout = () => (
+    <div className="criticdeck-card" key={settings.layoutMode} data-size={cardSize} data-layout="modern-compact">
+      <div className="criticdeck-scores">
+        {showMetascore && (
+          <div className="criticdeck-score-chip" data-tone={tone} ref={metaChipRef}>
+            <span className="criticdeck-score-chip-label">{t('badge.metaScoreLabel')}</span>
+            <strong className="criticdeck-score-chip-value">{metascoreDisplay}</strong>
+            <span className="criticdeck-score-chip-sub">{metascoreSubCompact}</span>
+          </div>
+        )}
+        {showUserScore && (
+          <div className="criticdeck-score-chip" data-tone={userTone} ref={userChipRef}>
+            <span className="criticdeck-score-chip-label">{t('badge.userScoreLabel')}</span>
+            <strong className="criticdeck-score-chip-value">
+              {userScoreValue.toFixed(1)}
+            </strong>
+            <span className="criticdeck-score-chip-sub">{userScoreSubCompact}</span>
+            {userScorePlatformNote && (
+              <span className="criticdeck-score-chip-platform-note">
+                {userScorePlatformNote}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+      <div className="criticdeck-body">
+        <div className="criticdeck-info">
+          <div className="criticdeck-title">{data?.title ?? title}</div>
+          <div className="criticdeck-meta">
+            {data?.platform || t('badge.platformUnknown')}
+            {formattedDate ? ` · ${formattedDate}` : ''}
+          </div>
+          <div className="criticdeck-status">
+            {loading && t('badge.updatingScore')}
+            {!loading && error && `⚠️ ${error}`}
+            {!loading && !error && label}
+          </div>
+        </div>
+        {renderActions()}
+      </div>
+    </div>
+  )
+
+  const renderMinimalLayout = () => (
+    <div className="criticdeck-card" key={settings.layoutMode} data-size={cardSize} data-layout="minimal">
+      <div className="criticdeck-scores">
+        {showMetascore && (
+          <div className="criticdeck-score-chip" data-tone={tone} ref={metaChipRef}>
+            <span className="criticdeck-score-chip-label">{t('badge.metaScoreLabel')}</span>
+            <strong className="criticdeck-score-chip-value">{metascoreDisplay}</strong>
+            <span className="criticdeck-score-chip-sub">{metascoreSubCompact}</span>
+          </div>
+        )}
+        {showUserScore && (
+          <div className="criticdeck-score-chip" data-tone={userTone} ref={userChipRef}>
+            <span className="criticdeck-score-chip-label">{t('badge.userScoreLabel')}</span>
+            <strong className="criticdeck-score-chip-value">
+              {userScoreValue.toFixed(1)}
+            </strong>
+            <span className="criticdeck-score-chip-sub">{userScoreSubCompact}</span>
+            {userScorePlatformNote && (
+              <span className="criticdeck-score-chip-platform-note">
+                {userScorePlatformNote}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+      <div className="criticdeck-meta">
+        {data?.platform || t('badge.platformUnknown')}
+        {formattedDate ? ` · ${formattedDate}` : ''}
+      </div>
+      <div className="criticdeck-status">
+        {loading && t('badge.updatingScore')}
+        {!loading && error && `⚠️ ${error}`}
+        {!loading && !error && label}
+      </div>
+    </div>
+  )
+
+  const showBothScores = showMetascore && showUserScore
+
+  const renderDefaultLayout = () => (
+    <div className="criticdeck-card" key={settings.layoutMode} data-size={cardSize} data-layout="card">
       <div className="criticdeck-scores" data-compact={showBothScores}>
         {showMetascore && (
           <div
@@ -180,26 +434,24 @@ export const MetacriticBadge = () => {
           </div>
         )}
         {showUserScore && (
-          <>
-            <div
-              className="criticdeck-score-circle"
-              data-tone={userTone}
-              data-compact={showBothScores}
-            >
-              <strong>{userScoreValue.toFixed(1)}</strong>
-              <span>User</span>
-            </div>
-          </>
+          <div
+            className="criticdeck-score-circle"
+            data-tone={userTone}
+            data-compact={showBothScores}
+          >
+            <strong>{userScoreValue.toFixed(1)}</strong>
+            <span>User</span>
+          </div>
         )}
       </div>
       <div className="criticdeck-body">
         <div className="criticdeck-title">{data?.title ?? title}</div>
         <div className="criticdeck-meta">
-          {data?.platform || 'Platform unknown'}
+          {data?.platform || t('badge.platformUnknown')}
           {formattedDate ? ` · ${formattedDate}` : ''}
         </div>
         <div className="criticdeck-status">
-          {loading && 'Updating Metacritic score…'}
+          {loading && t('badge.updatingScore')}
           {!loading && error && `⚠️ ${error}`}
           {!loading && !error && label}
         </div>
@@ -208,15 +460,33 @@ export const MetacriticBadge = () => {
     </div>
   )
 
+  const renderCardLayout = () => {
+    if (settings.layoutMode === 'modern-compact') return renderModernCompactLayout()
+    if (settings.layoutMode === 'modern') return renderModernLayout()
+    if (settings.layoutMode === 'minimal') return renderMinimalLayout()
+    return renderDefaultLayout()
+  }
+
+  const isBottom = position.startsWith('bottom')
+  const bottomOverride: React.CSSProperties =
+    isBottom && bannerHeight != null
+      ? {
+          top: `${Math.max(bannerHeight - (badgeHeight ?? 0) - verticalOffset, 0)}px`,
+          bottom: 'auto'
+        }
+      : {}
+
   return (
     <div
+      ref={rootRef}
       id="criticdeck-badge-container"
       className="criticdeck-badge-root"
       data-position={position}
       style={
         {
           '--criticdeck-offset-x': `${horizontalOffset || 0}px`,
-          '--criticdeck-offset-y': `${verticalOffset || 0}px`
+          '--criticdeck-offset-y': `${verticalOffset || 0}px`,
+          ...bottomOverride
         } as React.CSSProperties
       }
     >

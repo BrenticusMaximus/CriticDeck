@@ -2,4 +2,6 @@ node_modules/
 .rollup.cache/
 *.zip
 dist/
+release/
 .DS_Store
+.claude/
