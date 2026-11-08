@@ -33,6 +33,14 @@ CriticDeck is a Decky Loader plugin that patches Steam library routes and overla
 4. **User action**
    - Tapping the badge opens the Metacritic review page.
 
+## Score matching and platform logic
+
+Metacritic's data is per-platform and doesn't always have a critic or user score available for
+every platform, which can make a badge look "incomplete" for reasons that aren't obvious from
+the UI alone (e.g. a "TBD" score on PC for a game that's clearly been widely reviewed - just not
+on PC). See [`docs/metacritic-matching.md`](docs/metacritic-matching.md) for how title matching,
+platform resolution, and the critic/user score and sentiment fallbacks actually work.
+
 ## Installation
 
 1. Download the latest ZIP release from the repository releases page.
